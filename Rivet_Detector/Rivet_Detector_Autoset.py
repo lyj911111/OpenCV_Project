@@ -145,12 +145,14 @@ while True:
                     cv2.circle(frame, (cx_origin, cy_origin), 10, (0, 255, 0), -1)          # 중심 좌표 표시
                     Rivet_center.append([cx_origin, cy_origin])                             # 중심좌표 list에 추가
 
-        ##### 자동 좌표값 저장하기 #####
-        print(Rivet_center)                     # 자동 저장된 중심점값 출력
-        Rivet_num = len(Rivet_center)           # 자동 저장된 리벳의 갯수값 저장.
+        if Rivet_center != None:
+            ##### 자동 좌표값 저장하기 #####
+            print(Rivet_center)  # 자동 저장된 중심점값 출력
+            Rivet_num = len(Rivet_center)  # 자동 저장된 리벳의 갯수값 저장.
 
-        for i in range(Rivet_num):
-            Rivet_tuple.append(tuple(Rivet_center[i]))      # 자동 저장된 리벳 좌표값을 튜플로 변환후 리스트에 저장. -> (Circle 마크에 쓰기 위해)
+            for i in range(Rivet_num):
+                Rivet_tuple.append(tuple(Rivet_center[i]))  # 자동 저장된 리벳 좌표값을 튜플로 변환후 리스트에 저장. -> (Circle 마크에 쓰기 위해)
+
 
         cv2.imshow('capture_img.jpg', frame)    # 이미지 확인용.
         cv2.imwrite('capture_img.jpg', frame)   # 처음 이미지 캡쳐후 저장.
@@ -166,30 +168,36 @@ while True:
     # ** 리벳을 검출할 위치에 원으로 좌표 표시.
     for i in range(Rivet_num):
         reverse_copy = cv2.circle(reverse_copy, Rivet_tuple[i], 10, (0, 0, 0), -1)      # 가운데 점 픽셀값 확인용 (x,y)값으로 받음.
-        frame = cv2.circle(frame, Rivet_tuple[i], 10, (0, 255, 255), -1)                # 원본에도 점 표시.
+        frame = cv2.circle(frame, Rivet_tuple[i], 10, (0, 255, 255), -1)                # 원본에도 색상이 있는 점 표시.
 
     # ** 한 픽셀당 Binary 값을 표시.
     # [y , x]의 픽셀값 입력받음.
     pixel_val_list = []
 
-    for i in range(Rivet_num):
-        pixel_val = reverse[Rivet_center[i][1], Rivet_center[i][0]]     # 픽셀값 저장 (0, 255)
-        if pixel_val == 255:                                            # 검출된곳은 1, 검출되지 않을곳은 0으로 변환.
-            pixel_val = 0
+    # 리벳이 탐지유무에 따른 화면 출력.
+    if Rivet_num != 0:
+        for i in range(Rivet_num):
+            pixel_val = reverse[Rivet_center[i][1], Rivet_center[i][0]]  # 픽셀값 저장 (0, 255)
+            if pixel_val == 255:  # 검출된곳은 1, 검출되지 않을곳은 0으로 변환.
+                pixel_val = 0
+            else:
+                pixel_val = 1
+
+            pixel_val_list.append(pixel_val)  # 변환된 값을 리스트에 추가
+            pixel_sum = sum(pixel_val_list)  # 모든 픽셀의 합
+
+        print(pixel_val_list, pixel_sum)  # 픽셀값과 합계 출력
+
+        if pixel_sum == Rivet_num:
+            # 리벳의 갯수와 픽셀의 값이 일치하면 합격
+            pass
         else:
-            pixel_val = 1
-
-        pixel_val_list.append(pixel_val)                                # 변환된 값을 리스트에 추가
-        pixel_sum = sum(pixel_val_list)                                 # 모든 픽셀의 합
-
-    print(pixel_val_list, pixel_sum)                                    # 픽셀값과 합계 출력
-
-    if pixel_sum == Rivet_num:
-        # 리벳의 갯수와 픽셀의 값이 일치하면 합격
-        pass
+            # 그 외 불합격
+            cv2.putText(frame, '**NG**', (50, 300), font, fontScale, (0, 0, 255), 2, cv2.LINE_AA)
     else:
-        # 그 외 불합격
-        cv2.putText(frame, '**NG**', (50, 300), font, fontScale, (0, 0, 255), 2, cv2.LINE_AA)
+        cv2.putText(frame, "No data", (50, 300), font, 2, (255, 0, 0), 2, cv2.LINE_AA)
+
+
 
     cv2.imshow('Frame', frame)                      # 원본
     cv2.imshow('result', final_mask)                # 필터링후
