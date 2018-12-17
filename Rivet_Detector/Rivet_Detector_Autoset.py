@@ -145,13 +145,13 @@ while True:
                     cv2.circle(frame, (cx_origin, cy_origin), 10, (0, 255, 0), -1)          # 중심 좌표 표시
                     Rivet_center.append([cx_origin, cy_origin])                             # 중심좌표 list에 추가
 
-        if Rivet_center != None:
-            ##### 자동 좌표값 저장하기 #####
-            print(Rivet_center)  # 자동 저장된 중심점값 출력
-            Rivet_num = len(Rivet_center)  # 자동 저장된 리벳의 갯수값 저장.
 
-            for i in range(Rivet_num):
-                Rivet_tuple.append(tuple(Rivet_center[i]))  # 자동 저장된 리벳 좌표값을 튜플로 변환후 리스트에 저장. -> (Circle 마크에 쓰기 위해)
+        ##### 자동 좌표값 저장하기 #####
+        print(Rivet_center)  # 자동 저장된 중심점값 출력
+        Rivet_num = len(Rivet_center)  # 자동 저장된 리벳의 갯수값 저장.
+
+        for i in range(Rivet_num):
+            Rivet_tuple.append(tuple(Rivet_center[i]))  # 자동 저장된 리벳 좌표값을 튜플로 변환후 리스트에 저장. -> (Circle 마크에 쓰기 위해)
 
 
         cv2.imshow('capture_img.jpg', frame)    # 이미지 확인용.
