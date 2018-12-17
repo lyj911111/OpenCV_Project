@@ -1,26 +1,41 @@
 import cv2
+import ctypes
 import numpy as np
 import time
 import serial
 
+# NG출력 폰트, 문자크기, 두께 설정.
+font = cv2.FONT_HERSHEY_COMPLEX  # normal size sans-serif font
+fontScale = 5
+thickness = 4
+
+# 화면의 해상도와 크기 불러오기.
+user32 = ctypes.windll.user32
+screen_width = user32.GetSystemMetrics(0)
+screen_height = user32.GetSystemMetrics(1)
+screen_x, screen_y = screen_width/2, screen_height/2
+int(screen_x), int(screen_y)
+
+print(screen_x, screen_y)
+
 def nothing(x):
     pass
+
+
 
 cap = cv2.VideoCapture(0)
 cv2.namedWindow("Trackbars", cv2.WINDOW_NORMAL)
 
 ################## 데이터 입력 #########################
 # Rivet coordinates 리벳의 위치 좌표 정보 입력 (x, y 좌표)
-Rivets_coord = [[100, 100], [200, 200], [300, 300], [400, 400]]
+#[100, 100], [200, 200], [300, 300], [400, 400], [100, 400], [100, 300]
+Rivets_coord = [[100, 100], [200, 200]]
 
 Rivet_num = len(Rivets_coord)                     # 리벳의 갯수값 저장.
 
 Rivet_tuple = []                                  # 튜플값을 저장할 리스트
 for i in range(Rivet_num):
     Rivet_tuple.append(tuple(Rivets_coord[i]))    # 리벳 좌표값을 튜플로 변환후 리스트에 저장.
-
-
-#Rivets_rev = list(reversed((Rivets[0])))
 
 #테스트 출력
 print(Rivet_tuple)
@@ -146,23 +161,29 @@ while True:
     # ** 리벳을 검출할 위치에 원으로 좌표 표시.
     for i in range(Rivet_num):
         reverse_copy = cv2.circle(reverse_copy, Rivet_tuple[i], 10, (0, 0, 255), -1)  # 가운데 점 픽셀값 확인용 (x,y)값으로 받음.
-        frame = cv2.circle(frame, Rivet_tuple[i], 10, (0, 0, 255), -1)                # 원본에도 점 표시.
+        frame = cv2.circle(frame, Rivet_tuple[i], 10, (0, 255, 0), -1)                # 원본에도 점 표시.
 
     # ** 한 픽셀당 Binary 값을 표시.
     # [y , x]의 픽셀값 입력받음.
     pixel_val_list = []
     for i in range(Rivet_num):
-        pixel_val = reverse[Rivets_coord[i][1], Rivets_coord[i][0]]
-        pixel_val_list.append(pixel_val)
+        pixel_val = reverse[Rivets_coord[i][1], Rivets_coord[i][0]]     # 픽셀값 저장 (0, 255)
+        if pixel_val == 255:                                            # 검출된곳은 1, 검출되지 않을곳은 0으로 변환.
+            pixel_val = 0
+        else:
+            pixel_val = 1
 
-    print(pixel_val_list)
+        pixel_val_list.append(pixel_val)                                # 변환된 값을 리스트에 추가
+        pixel_sum = sum(pixel_val_list)                                 # 모든 픽셀의 합
 
+    print(pixel_val_list, pixel_sum)                                    # 픽셀값과 합계 출력
 
-    # pixel_val_1 = reverse[Rivets_coord[0][1], Rivets_coord[0][0]]               # [y , x]의 픽셀값 입력받음.
-    # pixel_val_2 = reverse[Rivets_coord[1][1], Rivets_coord[1][0]]
-    # pixel_val_3 = reverse[Rivets_coord[2][1], Rivets_coord[2][0]]
-    # pixel_val_4 = reverse[Rivets_coord[3][1], Rivets_coord[3][0]]
-    # print(pixel_val_1, pixel_val_2, pixel_val_3, pixel_val_4)
+    if pixel_sum == Rivet_num:
+        # 리벳의 갯수와 픽셀의 값이 일치하면 합격
+        pass
+    else:
+        # 그 외 불합격
+        cv2.putText(frame, '**NG**', (50, 300), font, fontScale, (0, 0, 255), 2, cv2.LINE_AA)
 
     cv2.imshow('Frame', frame)                      # 원본
     cv2.imshow('result', final_mask)                # 필터링후
