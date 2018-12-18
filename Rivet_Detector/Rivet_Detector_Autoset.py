@@ -1,8 +1,18 @@
 import cv2
-from PIL import Image
-import numpy as np
 import time
 import serial
+import datetime
+from PIL import Image
+import numpy as np
+
+# 시리얼 통신.
+# NANOserial = serial.Serial(
+#     port='COM3',\
+#     baudrate=115200,\
+#     parity=serial.PARITY_NONE,\
+#     stopbits=serial.STOPBITS_ONE,\
+#     bytesize=serial.EIGHTBITS,\
+#     timeout=0)
 
 # NG출력 폰트, 문자크기, 두께 설정.
 font = cv2.FONT_HERSHEY_COMPLEX  # normal size sans-serif font
@@ -11,19 +21,16 @@ thickness = 4
 
 #플레그
 Start_Rivet_flag = 0
+cnt = 0
+judge = 0
 
 def nothing(x):
     pass
 
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(1)
 cv2.namedWindow("Trackbars", cv2.WINDOW_NORMAL)
 
-
 Rivet_tuple = []                                  # 튜플값을 저장할 리스트
-
-
-#테스트 출력
-
 
 # FIND_BLACK
 cv2.createTrackbar("graybar", "Trackbars", 196, 255, nothing)
@@ -186,17 +193,17 @@ while True:
             pixel_val_list.append(pixel_val)  # 변환된 값을 리스트에 추가
             pixel_sum = sum(pixel_val_list)  # 모든 픽셀의 합
 
-        print(pixel_val_list, pixel_sum)  # 픽셀값과 합계 출력
+        #print(pixel_val_list, pixel_sum)  # 픽셀값과 합계 출력
 
         if pixel_sum == Rivet_num:
             # 리벳의 갯수와 픽셀의 값이 일치하면 합격
-            pass
+            judge = "OK"
         else:
             # 그 외 불합격
             cv2.putText(frame, '**NG**', (50, 300), font, fontScale, (0, 0, 255), 2, cv2.LINE_AA)
+            judge = "NG"
     else:
         cv2.putText(frame, "No data", (50, 300), font, 2, (255, 0, 0), 2, cv2.LINE_AA)
-
 
 
     cv2.imshow('Frame', frame)                      # 원본
@@ -204,5 +211,19 @@ while True:
     cv2.imshow('reverse', reverse)                  # 반전 (픽셀값을 찍어보기 위해 흑백)
     cv2.imshow('location_check', reverse_copy)      # 리벳위치 픽셀체크 위치 확인용
 
+    # 현재 날짜, 시간 데이터q
+    # s = "%04d-%02d-%02d %02d:%02d:%02d" % (now.tm_year, now.tm_mon, now.tm_mday, now.tm_hour, now.tm_min, now.tm_sec)
+    now = time.localtime()
+    s = "%04d-%02d-%02d" % (now.tm_year, now.tm_mon, now.tm_mday)
+
+    # stopper로 부터 아스키코드 'a' 가 들어오면 화면 캡쳐 - 데이터 저장. 로그기록.
+    if cv2.waitKey(1) & 0xff == ord('a'):
+        cnt = cnt + 1
+        if judge != 0:
+            cv2.imwrite("serialnum_" + s + "_" + str(cnt) + "_" + judge + ".jpg", frame)
+        else:
+            print("No data")
+
+    # 종료키
     if cv2.waitKey(1) & 0xff == ord('q'):
         break
