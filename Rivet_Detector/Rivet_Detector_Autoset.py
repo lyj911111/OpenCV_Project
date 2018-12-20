@@ -273,7 +273,10 @@ while True:
         cnt = cnt + 1
 
         if judge != 0:
-            cv2.imwrite("C:/Data_Record/capture/serialnum_" + s + "_" + str(cnt) + "_" + judge + ".jpg", frame)
+            if judge == "OK":
+                cv2.imwrite("C:/Data_Record/PASS/serialnum_" + s + "_" + str(cnt) + "_" + judge + ".jpg", frame)
+            else:
+                cv2.imwrite("C:/Data_Record/NG/serialnum_" + s + "_" + str(cnt) + "_" + judge + ".jpg", frame)
         else:
             print("No data")
 
