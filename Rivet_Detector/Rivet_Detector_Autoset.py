@@ -16,6 +16,12 @@ import time
 #     bytesize=serial.EIGHTBITS,\
 #     timeout=0)
 
+# 데이터를 저장할 위치(서버저장)
+store_location = "C:/Data_Record"
+
+# 바코드 시리얼 넘버 저장변수 (이곳에 시리얼 번호를 전달)
+serialnum = 1234567890
+
 # NG출력 폰트, 문자크기, 두께 설정.
 font = cv2.FONT_HERSHEY_COMPLEX  # normal size sans-serif font
 fontScale = 5
@@ -36,7 +42,7 @@ check_day = 0
 accum = 0       # 누적 판독
 OK = 0
 NG = 0
-serialnum = 0
+
 
 def nothing(x):
     pass
@@ -55,14 +61,14 @@ def leave_log(OK, NG):
     filename = str(year) + str(month) + str(day)
     if year != check_year and month != check_month and day != check_day:
         print("새로운 로그파일 생성")
-        f = open("C:/Data_Record/log_%s.txt" %filename, 'w')
+        f = open(store_location + "/log_%s.txt" %filename, 'w')
         check_year = time.year
         check_month = time.month
         check_day = time.day
         data = "     시리얼번호      //       현재 시간        //   누적 판독수   //   정상   //   불량\n"
         f.write(data)
 
-    f = open("C:/Data_Record/log_%s.txt" % filename, 'a')
+    f = open(store_location + "/log_%s.txt" % filename, 'a')
     time = str(year) + "_" + str(month) + "_" + str(day) + "_" + str(hour) + "_" + str(minute) + "_" + str(sec)
     data = str(serialnum) + "       //        "+ str(time) + "  //        " + str(accum) + "          //     " + str(OK) + "    //    " + str(NG) + '\n'
     f.write(data)
@@ -276,9 +282,9 @@ while True:
 
         if judge != 0:
             if judge == "OK":
-                cv2.imwrite("C:/Data_Record/PASS/serialnum_" + s + "_" + str(cnt) + "_" + judge + ".jpg", frame)
+                cv2.imwrite(store_location + "/PASS/" + str(serialnum) + "_" + s + "_" + str(cnt) + "_" + judge + ".jpg", frame)
             else:
-                cv2.imwrite("C:/Data_Record/NG/serialnum_" + s + "_" + str(cnt) + "_" + judge + ".jpg", frame)
+                cv2.imwrite(store_location + "/NG/" + str(serialnum) + "_" + s + "_" + str(cnt) + "_" + judge + ".jpg", frame)
         else:
             print("No data")
 
