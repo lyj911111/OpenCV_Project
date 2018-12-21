@@ -1,9 +1,11 @@
-import cv2
-import time
-import serial
+# Author  : Won Jae Lee
+# Version : 3.7.1
+
+import cv2				# pip install opencv-python
+import numpy as np		# pip install numpy
+import serial			# pip install serial
 import datetime
-from PIL import Image
-import numpy as np
+import time
 
 # 시리얼 통신.
 # NANOserial = serial.Serial(
