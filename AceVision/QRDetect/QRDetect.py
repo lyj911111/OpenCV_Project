@@ -365,7 +365,7 @@ def execute():
         cv2.imshow('Frame2', frame2)
         cv2.imshow('Frame3', frame3)
 
-        if cv2.waitKey(10) & 0xff == ord('q'):
+        if cv2.waitKey(1) & 0xff == ord('q'):
             break
 
     cap.release()
