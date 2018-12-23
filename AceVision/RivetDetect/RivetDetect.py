@@ -7,13 +7,12 @@ import serial
 import datetime
 import time
 
-
-
 # 데이터를 저장할 위치(서버저장)
 store_location = "C:/Data_Record"
 
-# 바코드 시리얼 넘버 저장변수 (이곳에 시리얼 번호를 전달)
-serialnum = 1234567890
+accum = 0  # 누적 판독
+OK = 0
+NG = 0
 
 check_year = 0
 check_month = 0
@@ -23,7 +22,7 @@ def nothing(x):
     pass
 
 
-def leave_log(OK, NG):
+def leave_log(serialnum, OK, NG):
     global check_year, check_month, check_day, accum
     time = datetime.datetime.now()
     year = time.year
@@ -50,24 +49,13 @@ def leave_log(OK, NG):
     f.write(data)
     f.close()
 
-accum = 0  # 누적 판독
-OK = 0
-NG = 0
 
-def execute():
-    accum = 0  # 누적 판독
-    OK = 0
-    NG = 0
+def execute(serialnum):
 
-    # 시리얼 통신.
-    # NANOserial = serial.Serial(
-    #     port='COM3',\
-    #     baudrate=115200,\
-    #     parity=serial.PARITY_NONE,\
-    #     stopbits=serial.STOPBITS_ONE,\
-    #     bytesize=serial.EIGHTBITS,\
-    #     timeout=0)
+    # if serialnum == 0:
+    #     serialnum = 1234567890
 
+    global accum, OK, NG
 
 
     # NG출력 폰트, 문자크기, 두께 설정.
@@ -76,7 +64,7 @@ def execute():
     thickness = 4
 
     # 사용할 카메라 설정.
-    cap = cv2.VideoCapture(1)
+    cap = cv2.VideoCapture(0)
     cv2.namedWindow("Trackbars", cv2.WINDOW_NORMAL)
 
     # 플레그, 초기값
@@ -306,11 +294,14 @@ def execute():
             else:
                 pass
 
-            leave_log(OK, NG)       # 판독값을 로그로 남김.
+            leave_log(serialnum, OK, NG)       # 판독값을 로그로 남김.
+
         # 종료키
         elif cv2.waitKey(1) & 0xff == ord('q'):
             break
 
 if __name__ == "__main__":
-    execute()
+
+    serialnum = 123456789 # 코드 테스트 임시 시리얼번호
+    execute(serialnum)
 

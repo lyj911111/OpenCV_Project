@@ -1,3 +1,11 @@
+# -*- coding: utf-8 -*-
+
+'''
+Created on Dec 22, 2018
+
+@author: AnSunHwan
+'''
+
 # import the necessary packages
 # -*- coding: utf-8 -*-
 import numpy as np                          #pip install numpy
@@ -11,7 +19,7 @@ import time
 import os
 
 # 데이터를 저장할 위치(서버저장)
-store_location = "C:/Data_Record_QR"
+store_location = "D:\\workspace\\vision\\vision\\log"
 
 count_pass = 0
 count_fail = 0
@@ -21,13 +29,14 @@ check_year = 0
 check_month = 0
 check_day = 0
 
+cv2.namedWindow("Trackbars", cv2.WINDOW_NORMAL)
+
 def nothing(x):
     pass
 
 def leave_log():
     global check_year, check_month, check_day, f
     global count_pass, count_fail, accumulation
-
 
     time = datetime.datetime.now()
     year = time.year
@@ -37,25 +46,17 @@ def leave_log():
     minute = time.minute
     sec = time.second
 
-    '''
-    print("현재 시간 : ", time)
-    print(time.year, time.month, time.day, time.hour)
-    print("누적 판독 바코드 : %d" % accumulation)
-    print("정상 바코드 : %d" % count_pass)
-    print("불량 바코드 : %d" % count_fail)
-    '''
-
     filename = str(year)+str(month)+str(day)
     if year != check_year and month != check_month and day != check_day:
         print("새로운 로그 파일 생성")
-        f = open(store_location + "/log_%s.txt" % filename, 'w')
+        f = open(store_location + "log_%s.txt" % filename, 'w')
         check_year = time.year
         check_month = time.month
         check_day = time.day
         data = "현재 시간  //  누적 판독 바코드  //  정상 바코드  //  불량 바코드\n"
         f.write(data)
 
-    f = open(store_location + "/log_%s.txt" % filename, 'a')
+    f = open(store_location + "\log_%s.txt" % filename, 'a')
     time = str(year) + "-" + str(month) + "-" + str(day) + " " + str(hour) + ":" + str(minute) + ":" + str(sec)
     data = str(time) + " // " + str(accumulation) + " // " + str(count_pass) + " // " + str(count_fail) + "\n"
     print(data)
@@ -81,13 +82,11 @@ def execute():
     check_image_center = True
     global count_pass, count_fail, accumulation
 
+    #바코드 판독 위치
     qr_x1 = 141
     qr_y1 = 236
     qr_x2 = 254
     qr_y2 = 348
-
-
-    cv2.namedWindow("Trackbars", cv2.WINDOW_NORMAL)
 
     # FIND_BLACK_PUCK
     cv2.createTrackbar("graybar", "Trackbars", 105, 255, nothing)
@@ -119,44 +118,22 @@ def execute():
     cv2.createTrackbar("rank", "Trackbars", 0, 10, nothing)
 
     cap = cv2.VideoCapture(1)
+    
     while True:
-
-        '''
-        _, frame = cap.read()
-        # col,row,_ = frame.shape 
-        # print(col,row)
-        frame2 = frame.copy() 
-        '''
-        #frame = cv2.imread("image\\qr123.png")
-
         _, frame = cap.read()
         frame = cv2.flip(frame, 1)
         frame = cv2.flip(frame, 0)
         frame2 = frame.copy()
         frame3 = frame.copy()
 
-        '''
-        if check_image_center:
-            col, row, _ = frame.shape
-            const_refx = int(row/2)
-            const_refy = int(col/2)
-            #print(const_refx, const_refy)
-        check_image_center = False
-        '''
-
         #바코드 입력 위치
         cv2.rectangle(frame3, (qr_x1, qr_y1), (qr_x2, qr_y2), (255, 0 , 0), 3)
-    ##    dx_ref = abs(qr_x1-qr_x2)
-    ##    dy_ref = abs(qr_y1-qr_y2)
         cx_ref = int(abs(qr_x1+qr_x2)/2)
         cy_ref = int(abs(qr_y1+qr_y2)/2)
         cv2.circle(frame3, (cx_ref, cy_ref), 3, (255,0,0), -1)
 
-        # blurred_frame = cv2.GaussianBlur(frame, (5, 5), 0)
         frame = cv2.GaussianBlur(frame, (3, 3), 0)
-        # frame = cv2.blur(frame,(3,3))
         gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        # ret, thresh = cv2.threshold(gray_frame, 45, 255, cv2.THRESH_BINARY_INV)
 
         blue, green, red = cv2.split(frame)
         frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
@@ -229,28 +206,17 @@ def execute():
         final_mask = cv2.bitwise_and(final_mask, blue_)
         final_mask = cv2.bitwise_and(final_mask, green_)
         final_mask = cv2.bitwise_and(final_mask, red_)
-        #final_mask = cv2.bitwise_and(final_mask, h_)
-        #final_mask = cv2.bitwise_and(final_mask, s_)
         final_mask = cv2.bitwise_and(final_mask, v_)
-        #final_mask = cv2.bitwise_and(final_mask, H_)
-        #final_mask = cv2.bitwise_and(final_mask, L_)
-        #final_mask = cv2.bitwise_and(final_mask, S_)
         result = cv2.bitwise_and(frame2, frame2, mask=final_mask)
-        #cv2.imshow('result', final_mask)
 
-        # blur and threshold the image
         blurred = cv2.blur(final_mask, (4, 4))
-        #cv2.imshow("blurred", blurred)
         (_, thresh) = cv2.threshold(blurred, th, 255, cv2.THRESH_BINARY)
-        #cv2.imshow("thresh", thresh)
 
         kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (k1, k2))
         closed = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
 
         closed = cv2.erode(closed, None, iterations = itera)
         closed = cv2.dilate(closed, None, iterations = itera)
-
-        #cv2.imshow("closed", closed)
 
         cnts= cv2.findContours(closed.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         cnts = imutils.grab_contours(cnts)
@@ -259,7 +225,7 @@ def execute():
             c = sorted(cnts, key = cv2.contourArea, reverse = True)[rank]
             M = cv2.moments(c)
             rect = cv2.minAreaRect(c)
-            box = cv2.cv.BoxPoints(rect) if imutils.is_cv2() else cv2.boxPoints(rect)
+            box = cv2.boxPoints(rect) if imutils.is_cv2() else cv2.boxPoints(rect)
             box = np.int0(box)
 
             cv2.drawContours(frame2, [box], -1, color, 2)
@@ -288,14 +254,6 @@ def execute():
                 Area = dx * dy
 
             cv2.circle(frame3, (cx, cy), 3, (0,255,0), -1)
-            print(cx, cy)
-            print(Area)
-            print(box)
-
-            cv2.putText(frame2, "%d" % cx, (400, 100), cv2.FONT_HERSHEY_SIMPLEX, 3, (0, 0, 255), 1)
-            cv2.putText(frame2, "%d" % cy, (400, 200), cv2.FONT_HERSHEY_SIMPLEX, 3, (0, 0, 255), 1)
-            #cv2.putText(frame2, "%d" % Area, (400, 300), cv2.FONT_HERSHEY_SIMPLEX, 3, (0, 255, 255), 1)
-
 
             box_x0 = box_x[0]<box_x[1] and box_x[0] or box_x[1]
             box_y1 = box_y[0]>box_y[1] and box_y[0] or box_y[1]
@@ -304,34 +262,12 @@ def execute():
             dx = cx - box_x0
             dy = cy - box_y0
 
-            PI = 3.141592
-            degree = int(atan2(dx, dy)*180/PI)
-            print(degree)
-            cv2.putText(frame3, "%d"%degree, (300, 300), cv2.FONT_HERSHEY_SIMPLEX, 3, (0, 255, 0), 3)
-
-            #print(box_x[0], box_x[1])
-            #print(box_y[0], box_y[1])
-            #print(box_y0, box_y1)
-
-            #print(cx, cx_ref)
-
-            '''
-            print(abs(int(box_x[0]) - int(qr_x1)), abs(int(box_x[1]) - int(qr_x2)), abs(int(box_x[1]) - int(qr_x1)))
-            print(int(box_x[0]), int(qr_x1))
-            print(int(box_x[1]), int(qr_x2))
-            print(box_x0)
-            
-            qr_x1 = 141
-            qr_y1 = 236
-            qr_x2 = 254
-            qr_y2 = 348
-            '''
+            degree = int(atan2(dx, dy)*180/math.pi)
+            #cv2.putText(frame3, "%d"%degree, (300, 300), cv2.FONT_HERSHEY_SIMPLEX, 3, (0, 255, 0), 3)
 
             fn = datetime.datetime.now()
             folder_name = str(fn.year) + "-" + str(fn.month) + "-" + str(fn.day)
-            #print(box_x0, qr_x1)
             if abs(cx- cx_ref) <= 1 and (10000 <= Area and Area <= 18000) :
-            #if abs(int(box_x0) - int(qr_x1)) <= 2 and 10000<=Area and Area <= 18000:
                 print("=====  판독 중  =====")
                 today = get_today()
                 foldername_today = ".\\" + today
@@ -341,19 +277,15 @@ def execute():
                 foldername_fail = ".\\" + today + "\\fail"
                 make_folder(foldername_fail)
 
-                #print(abs(cx- cx_ref), abs(box_y[0]-qr_y2), abs(box_y[1] - qr_y1))
-                #if abs(cx- cx_ref) <= 5 and abs(box_y0-qr_y1) <= 7 and abs(box_y1 - qr_y2) <= 7 :
                 if (40 < degree and degree < 50) and abs(int(box_x0) - int(qr_x1)) <= 7 \
                    and abs(box_y0 - qr_y1) <= 7 and abs(box_y1 - qr_y2) <= 7 :
                     cv2.putText(frame3, "PASS", (cx-100, cy-50), cv2.FONT_HERSHEY_SIMPLEX, 3, (0, 255, 0), 5)
                     cv2.imwrite(".\\%s\\pass\\qr%d.jpg" % (folder_name, count_pass), frame3)
-                    #cv2.imwrite(".\\%s\\pass\\qr%d.jpg" % count_pass, frame3)
                     count_pass += 1
                     print("정상 위치")
                 else:
                     cv2.putText(frame3, "NG", (cx-100, cy-50), cv2.FONT_HERSHEY_SIMPLEX, 3, (0, 0, 255), 5)
                     cv2.imwrite(".\\%s\\fail\\qr%d.jpg" % (folder_name, count_fail), frame3)
-                    #cv2.imwrite(".\\save_image\\fail\\qr%d.jpg" % count_fail, frame3)
                     count_fail += 1
                     print("불량")
                 accumulation = count_pass + count_fail;
