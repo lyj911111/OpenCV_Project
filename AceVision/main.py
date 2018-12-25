@@ -1,6 +1,6 @@
 import sys
-from RivetDetect import RivetDetect
-from QRDetect import QRDetect
+from RivetDetect import *
+from QRDetect import *
 import serial
 
 # 시리얼 통신.
