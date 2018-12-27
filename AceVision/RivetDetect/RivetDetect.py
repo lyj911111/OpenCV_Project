@@ -21,7 +21,6 @@ check_day = 0
 def nothing(x):
     pass
 
-
 def leave_log(serialnum, OK, NG):
     global check_year, check_month, check_day, accum
     time = datetime.datetime.now()
@@ -49,7 +48,6 @@ def leave_log(serialnum, OK, NG):
     f.write(data)
     f.close()
 
-
 def execute(serialnum):
 
     # if serialnum == 0:
@@ -57,14 +55,13 @@ def execute(serialnum):
 
     global accum, OK, NG
 
-
     # NG출력 폰트, 문자크기, 두께 설정.
     font = cv2.FONT_HERSHEY_COMPLEX  # normal size sans-serif font
     fontScale = 5
     thickness = 4
 
     # 사용할 카메라 설정.
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(1)
     cv2.namedWindow("Trackbars", cv2.WINDOW_NORMAL)
 
     # 플레그, 초기값
@@ -73,33 +70,37 @@ def execute(serialnum):
     judge = 0
     Rivet_tuple = []                                  # 튜플값을 저장할 리스트
 
+    # 좌표값 예외처리할 사각박스
+    exception_box = [[400, 200], [100, 100]]  # <======= 이곳에 예외처리할 사각박스 좌표를 입력.
+    box_width = 200                           # <======= 사각박스 크기 입력
+    box_height = 200
 
     # FIND_BLACK
-    cv2.createTrackbar("graybar", "Trackbars", 145, 255, nothing) #135
-    cv2.createTrackbar("bluebar", "Trackbars", 170,  255, nothing) #110
-    cv2.createTrackbar("greenbar", "Trackbars", 101, 255, nothing) #101
-    cv2.createTrackbar("redbar", "Trackbars", 141,  255, nothing) #101
-    cv2.createTrackbar("hsv hbar", "Trackbars", 205, 255, nothing)#255
-    cv2.createTrackbar("hsv sbar", "Trackbars", 95, 255, nothing)#115
-    cv2.createTrackbar("hsv vbar", "Trackbars", 136, 255, nothing)#141
-    cv2.createTrackbar("hsl hbar", "Trackbars", 245, 255, nothing)#255
-    cv2.createTrackbar("hsl sbar", "Trackbars", 150, 255, nothing)#170
-    cv2.createTrackbar("hsl lbar", "Trackbars", 200, 255, nothing)#175
+    cv2.createTrackbar("graybar", "Trackbars", 150, 255, nothing)  # 135
+    cv2.createTrackbar("bluebar", "Trackbars", 93, 255, nothing)  # 110
+    cv2.createTrackbar("greenbar", "Trackbars", 99, 255, nothing)  # 101
+    cv2.createTrackbar("redbar", "Trackbars", 25, 255, nothing)  # 101
+    cv2.createTrackbar("hsv hbar", "Trackbars", 165, 255, nothing)  # 255
+    cv2.createTrackbar("hsv sbar", "Trackbars", 230, 255, nothing)  # 115
+    cv2.createTrackbar("hsv vbar", "Trackbars", 120, 255, nothing)  # 141
+    cv2.createTrackbar("hsl hbar", "Trackbars", 165, 255, nothing)  # 255
+    cv2.createTrackbar("hsl sbar", "Trackbars", 110, 255, nothing)  # 170
+    cv2.createTrackbar("hsl lbar", "Trackbars", 170, 255, nothing)  # 175
 
-    #cv2.createTrackbar("graybar_", "Trackbars", 0, 255, nothing)
-    cv2.createTrackbar("bluebar_", "Trackbars", 13,  255, nothing)#33
-    cv2.createTrackbar("greenbar_", "Trackbars", 35, 255, nothing)#35
-    cv2.createTrackbar("redbar_", "Trackbars", 0,  255, nothing)
-    cv2.createTrackbar("hsv hbar_", "Trackbars", 0, 255, nothing)
-    cv2.createTrackbar("hsv sbar_", "Trackbars", 20, 255, nothing)
-    cv2.createTrackbar("hsv vbar_", "Trackbars", 40, 255, nothing)
+    # cv2.createTrackbar("graybar_", "Trackbars", 0, 255, nothing)
+    cv2.createTrackbar("bluebar_", "Trackbars", 0, 255, nothing)  # 33
+    cv2.createTrackbar("greenbar_", "Trackbars", 10, 255, nothing)  # 35
+    cv2.createTrackbar("redbar_", "Trackbars", 0, 255, nothing)
+    cv2.createTrackbar("hsv hbar_", "Trackbars", 5, 255, nothing)
+    cv2.createTrackbar("hsv sbar_", "Trackbars", 10, 255, nothing)
+    cv2.createTrackbar("hsv vbar_", "Trackbars", 0, 255, nothing)
     cv2.createTrackbar("hsl hbar_", "Trackbars", 40, 255, nothing)
-    cv2.createTrackbar("hsl sbar_", "Trackbars", 90, 255, nothing)
+    cv2.createTrackbar("hsl sbar_", "Trackbars", 95, 255, nothing)
     cv2.createTrackbar("hsl lbar_", "Trackbars", 65, 255, nothing)
 
-    cv2.createTrackbar("k1", "Trackbars", 5, 50, nothing)
-    cv2.createTrackbar("k2", "Trackbars", 30, 50, nothing)
-    cv2.createTrackbar("itera", "Trackbars", 1, 10, nothing)
+    cv2.createTrackbar("k1", "Trackbars", 8, 50, nothing)
+    cv2.createTrackbar("k2", "Trackbars", 19, 50, nothing)
+    cv2.createTrackbar("itera", "Trackbars", 6, 10, nothing)
     cv2.createTrackbar("rank", "Trackbars", 0, 10, nothing)
 
     while True:
@@ -194,29 +195,41 @@ def execute(serialnum):
 
         #################### 리벳 중심좌표값 자동 저장용 ##########################
 
+        # 예외 처리할 부분 사각박스 씌우기
+        for i in range(len(exception_box)):
+            frame = cv2.rectangle(frame, tuple(exception_box[i]), (exception_box[i][0] + box_width, exception_box[i][1] + box_height), (0, 255, 0), 1)
+
         if Start_Rivet_flag == 0:   # 시작할때 한번만 작동 플레그.
+
             Rivet_center = []
+            cx_origin = 0
+            cy_origin = 0
 
             _, contours, _ = cv2.findContours(final_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)  # 컨투어 찾기
             if len(contours) != 0:
                 for contour in contours:
-                    if (cv2.contourArea(contour) > 800) and (cv2.contourArea(contour) < 4500):  # **필요한 면적을 찾아 중심점 표시
+                    if (cv2.contourArea(contour) > 800) and (cv2.contourArea(contour) < 4500):  # **필요한 면적을 찾아 중심점 좌표를 저장
                         ball_area = cv2.contourArea(contour)
                         mom = contour
                         M = cv2.moments(mom)
                         cx_origin = int(M['m10'] / M['m00'])
                         cy_origin = int(M['m01'] / M['m00'])
-                        cv2.circle(frame, (cx_origin, cy_origin), 10, (0, 255, 0), -1)          # 중심 좌표 표시
-                        Rivet_center.append([cx_origin, cy_origin])                             # 중심좌표 list에 추가
 
+                        Rivet_center.append([cx_origin, cy_origin])       # 중심좌표 list에 추가
+
+                         # 좌표값 사각박스 내 예외 처리
+                        for i in range(len(exception_box)):
+                            if (cx_origin > exception_box[i][0] and cx_origin < (exception_box[i][0] + box_width)) and (cy_origin > exception_box[i][1] and cy_origin < (exception_box[i][1] + box_height)): # 중심좌표가 예외 처리 사각박스 안에 있나 비교
+                                Rivet_center.pop()      # 예외처리 박스 안에 있으면, append된 마지막 리스트를 다시 빼버림.
+
+                        cv2.circle(frame, (cx_origin, cy_origin), 10, (0, 255, 0), -1)  # 처음에 찍힌 원래 중심 좌표 표시, 예외처리 하기 전 중심좌표들 표시
 
             ##### 자동 좌표값 저장하기 #####
-            print(Rivet_center)  # 자동 저장된 중심점값 출력
+            print("저장된 리벳의 좌표:", Rivet_center)  # 자동 저장된 중심점값 출력
             Rivet_num = len(Rivet_center)  # 자동 저장된 리벳의 갯수값 저장.
 
             for i in range(Rivet_num):
                 Rivet_tuple.append(tuple(Rivet_center[i]))  # 자동 저장된 리벳 좌표값을 튜플로 변환후 리스트에 저장. -> (Circle 마크에 쓰기 위해)
-
 
             cv2.imshow('capture_img.jpg', frame)    # 이미지 확인용.
             cv2.imwrite('capture_img.jpg', frame)   # 처음 이미지 캡쳐후 저장.
@@ -261,7 +274,6 @@ def execute(serialnum):
                 judge = "NG"
         else:
             cv2.putText(frame, "No data", (50, 300), font, 2, (255, 0, 0), 2, cv2.LINE_AA)
-
 
         cv2.imshow('Frame', frame)                      # 원본
         cv2.imshow('result', final_mask)                # 필터링후
