@@ -44,11 +44,11 @@ while(cap.isOpened()):
     cv2.namedWindow('frame')
     cv2.setMouseCallback('frame', on_mouse)
 
-    # 사각형 그리기
-    if startPoint == True and endPoint == True:
-        cv2.rectangle(frame, (rect[0], rect[1]), (rect[2], rect[3]), (255, 0, 255), 2)
+    # 사각형 하나 그리기
+    #if startPoint == True and endPoint == True:
+    #    cv2.rectangle(frame, (rect[0], rect[1]), (rect[2], rect[3]), (255, 0, 255), 2)
 
-    # 사각형을 그리면 그 자리에 계속 사각형을 남기도록 루프를 돌림.
+    # 연속 사각형을 그리면 그 자리에 계속 사각형을 남기도록 루프를 돌림.
     for i in range(len(rectangle)):
         cv2.rectangle(frame, (rectangle[i][0], rectangle[i][1]), (rectangle[i][2], rectangle[i][3]), (255, 0, 0), 2)
 
