@@ -1,12 +1,10 @@
-# Python Version : 3.7.1
-
 import cv2                      # pip install opencv-python
 import numpy as np              # pip install numpy
 import pyzbar.pyzbar as pyzbar  # pip install pyzbar
 import sys
 import time
 
-cap = cv2.VideoCapture(1)   #  cap에 비디오 영상을 저장.
+cap = cv2.VideoCapture(0)   #  cap에 비디오 영상을 저장.
 
 # 바코드와 QR코드를 해독하는 클래스
 def decode(im) :
