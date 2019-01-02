@@ -1,0 +1,257 @@
+# Author  : Won Jae Lee
+# Version : 3.7.1
+
+import cv2
+import numpy as np
+import serial
+import datetime
+import time
+
+def nothing(x):
+    pass
+
+# 사용할 카메라를 인자로 받음 ( 선택카메라(0,1,2) )
+def execute(cam):
+
+    global accum, OK, NG, serialnum
+
+    # NG출력 폰트, 문자크기, 두께 설정.
+    font = cv2.FONT_HERSHEY_COMPLEX  # normal size sans-serif font
+    fontScale = 5
+
+    # 사용할 카메라 설정.
+    cap = cv2.VideoCapture(cam)
+    cv2.namedWindow("Trackbars", cv2.WINDOW_NORMAL)
+
+    # 플레그, 초기값
+    Start_Rivet_flag = 0
+    Rivet_tuple = []                                  # 튜플값을 저장할 리스트
+    camm = cam                                        # 예외처리 박스 int형 변수 전달.
+    cam = str(cam)                                    # 실행창 번호 할당을 위해
+
+    # 좌표값 예외처리할 사각박스
+    if camm == 0:
+        exception_box = [[100, 100], [200, 200]]    # <======= 0번 카메라 이곳에 예외처리할 사각박스 좌표를 입력.
+    elif camm == 1:
+        exception_box = [[300, 300], [400, 400]]    # <======= 1번 카메라 이곳에 예외처리할 사각박스 좌표를 입력.
+    elif camm == 2:
+        exception_box = [[200, 100], [100, 200]]    # <======= 2번 카메라 이곳에 예외처리할 사각박스 좌표를 입력.
+
+    box_width = 70                           # <======= 사각박스 크기 입력
+    box_height = 70
+
+    # FIND_BLACK
+    cv2.createTrackbar("graybar", "Trackbars", 150, 255, nothing)  # 135
+    cv2.createTrackbar("bluebar", "Trackbars", 93, 255, nothing)  # 110
+    cv2.createTrackbar("greenbar", "Trackbars", 99, 255, nothing)  # 101
+    cv2.createTrackbar("redbar", "Trackbars", 25, 255, nothing)  # 101
+    cv2.createTrackbar("hsv hbar", "Trackbars", 165, 255, nothing)  # 255
+    cv2.createTrackbar("hsv sbar", "Trackbars", 230, 255, nothing)  # 115
+    cv2.createTrackbar("hsv vbar", "Trackbars", 120, 255, nothing)  # 141
+    cv2.createTrackbar("hsl hbar", "Trackbars", 165, 255, nothing)  # 255
+    cv2.createTrackbar("hsl sbar", "Trackbars", 110, 255, nothing)  # 170
+    cv2.createTrackbar("hsl lbar", "Trackbars", 170, 255, nothing)  # 175
+
+    # cv2.createTrackbar("graybar_", "Trackbars", 0, 255, nothing)
+    cv2.createTrackbar("bluebar_", "Trackbars", 0, 255, nothing)  # 33
+    cv2.createTrackbar("greenbar_", "Trackbars", 10, 255, nothing)  # 35
+    cv2.createTrackbar("redbar_", "Trackbars", 0, 255, nothing)
+    cv2.createTrackbar("hsv hbar_", "Trackbars", 5, 255, nothing)
+    cv2.createTrackbar("hsv sbar_", "Trackbars", 10, 255, nothing)
+    cv2.createTrackbar("hsv vbar_", "Trackbars", 0, 255, nothing)
+    cv2.createTrackbar("hsl hbar_", "Trackbars", 40, 255, nothing)
+    cv2.createTrackbar("hsl sbar_", "Trackbars", 95, 255, nothing)
+    cv2.createTrackbar("hsl lbar_", "Trackbars", 65, 255, nothing)
+
+    cv2.createTrackbar("k1", "Trackbars", 8, 50, nothing)
+    cv2.createTrackbar("k2", "Trackbars", 19, 50, nothing)
+    cv2.createTrackbar("itera", "Trackbars", 6, 10, nothing)
+    cv2.createTrackbar("rank", "Trackbars", 0, 10, nothing)
+
+    while True:
+
+        _, frame = cap.read()
+
+        # col,row,_ = frame.shape # frame 화면크기 출력, (y ,x) = (480x640)
+        # print(col,row)
+        frame2 = frame.copy() # 영상원본
+
+        frame = cv2.GaussianBlur(frame, (3, 3), 0)              # 원본에 가우시안 필터적용
+        gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+        blue, green, red = cv2.split(frame)                     # 원본에서 BGR 분리
+        frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)      # HSV(색상, 채도, 명도) 분리
+        h, s, v = cv2.split(frame_hsv)                          # 분리후 저장.
+
+        frame_hls = cv2.cvtColor(frame, cv2.COLOR_BGR2HLS)      # BGR -> HLS로
+        H, L, S = cv2.split(frame_hls)                          # H,L,S 분리
+
+        gray_c = cv2.getTrackbarPos("graybar", "Trackbars")
+        blue_c = cv2.getTrackbarPos("bluebar", "Trackbars")
+        green_c = cv2.getTrackbarPos("greenbar", "Trackbars")
+        red_c = cv2.getTrackbarPos("redbar", "Trackbars")
+        hsv_h_c = cv2.getTrackbarPos("hsv hbar", "Trackbars")
+        hsv_s_c = cv2.getTrackbarPos("hsv sbar", "Trackbars")
+        hsv_v_c = cv2.getTrackbarPos("hsv vbar", "Trackbars")
+        hsl_h_c = cv2.getTrackbarPos("hsl hbar", "Trackbars")
+        hsl_s_c = cv2.getTrackbarPos("hsl sbar", "Trackbars")
+        hsl_l_c = cv2.getTrackbarPos("hsl lbar", "Trackbars")
+
+        gray_c_ = cv2.getTrackbarPos("graybar_", "Trackbars")
+        blue_c_ = cv2.getTrackbarPos("bluebar_", "Trackbars")
+        green_c_ = cv2.getTrackbarPos("greenbar_", "Trackbars")
+        red_c_ = cv2.getTrackbarPos("redbar_", "Trackbars")
+        hsv_h_c_ = cv2.getTrackbarPos("hsv hbar_", "Trackbars")
+        hsv_s_c_ = cv2.getTrackbarPos("hsv sbar_", "Trackbars")
+        hsv_v_c_ = cv2.getTrackbarPos("hsv vbar_", "Trackbars")
+        hsl_h_c_ = cv2.getTrackbarPos("hsl hbar_", "Trackbars")
+        hsl_s_c_ = cv2.getTrackbarPos("hsl sbar_", "Trackbars")
+        hsl_l_c_ = cv2.getTrackbarPos("hsl lbar_", "Trackbars")
+
+        k1 = cv2.getTrackbarPos("k1", "Trackbars")
+        k2 = cv2.getTrackbarPos("k2", "Trackbars")
+        itera = cv2.getTrackbarPos("itera", "Trackbars")
+        rank = cv2.getTrackbarPos("rank", "Trackbars")
+
+        _, gray1 = cv2.threshold(gray_frame, gray_c, 255, cv2.THRESH_BINARY_INV)
+        _, blue1 = cv2.threshold(blue, blue_c, 255, cv2.THRESH_BINARY_INV)
+        _, green1 = cv2.threshold(green, green_c, 255, cv2.THRESH_BINARY_INV)
+        _, red1 = cv2.threshold(red, red_c, 255, cv2.THRESH_BINARY_INV)
+        _, h1 = cv2.threshold(h, hsv_h_c, 255, cv2.THRESH_BINARY_INV)
+        _, s1 = cv2.threshold(s, hsv_s_c, 255, cv2.THRESH_BINARY_INV)
+        _, v1 = cv2.threshold(v, hsv_v_c, 255, cv2.THRESH_BINARY_INV)
+        _, H1 = cv2.threshold(H, hsl_h_c, 255, cv2.THRESH_BINARY_INV)
+        _, L1 = cv2.threshold(L, hsl_s_c, 255, cv2.THRESH_BINARY_INV)
+        _, S1 = cv2.threshold(S, hsl_l_c, 255, cv2.THRESH_BINARY_INV)
+
+        _, gray_ = cv2.threshold(gray_frame, gray_c_, 255, cv2.THRESH_BINARY)
+        _, blue_ = cv2.threshold(blue, blue_c_, 255, cv2.THRESH_BINARY)
+        _, green_ = cv2.threshold(green, green_c_, 255, cv2.THRESH_BINARY)
+        _, red_ = cv2.threshold(red, red_c_, 255, cv2.THRESH_BINARY)
+        _, h_ = cv2.threshold(h, hsv_h_c_, 255, cv2.THRESH_BINARY)
+        _, s_ = cv2.threshold(s, hsv_s_c_, 255, cv2.THRESH_BINARY)
+        _, v_ = cv2.threshold(v, hsv_v_c_, 255, cv2.THRESH_BINARY)
+        _, H_ = cv2.threshold(H, hsl_h_c_, 255, cv2.THRESH_BINARY)
+        _, L_ = cv2.threshold(L, hsl_s_c_, 255, cv2.THRESH_BINARY)
+        _, S_ = cv2.threshold(S, hsl_l_c_, 255, cv2.THRESH_BINARY)
+
+        final_mask = gray1
+        final_mask = cv2.bitwise_and(final_mask, blue1)
+        final_mask = cv2.bitwise_and(final_mask, green1)
+        final_mask = cv2.bitwise_and(final_mask, red1)
+        final_mask = cv2.bitwise_and(final_mask, h1)
+        final_mask = cv2.bitwise_and(final_mask, s1)
+        final_mask = cv2.bitwise_and(final_mask, v1)
+        final_mask = cv2.bitwise_and(final_mask, H1)
+        final_mask = cv2.bitwise_and(final_mask, L1)
+        final_mask = cv2.bitwise_and(final_mask, S1)
+
+        final_mask = cv2.bitwise_and(final_mask, gray_)
+        final_mask = cv2.bitwise_and(final_mask, blue_)
+        final_mask = cv2.bitwise_and(final_mask, green_)
+        final_mask = cv2.bitwise_and(final_mask, red_)
+        # final_mask = cv2.bitwise_and(final_mask, h_)
+        # final_mask = cv2.bitwise_and(final_mask, s_)
+        final_mask = cv2.bitwise_and(final_mask, v_)
+        # final_mask = cv2.bitwise_and(final_mask, H_)
+        # final_mask = cv2.bitwise_and(final_mask, L_)
+        # final_mask = cv2.bitwise_and(final_mask, S_)
+        result = cv2.bitwise_and(frame2, frame2, mask=final_mask)
+
+        #################### 리벳 중심좌표값 자동 저장용 ##########################
+
+        # 예외 처리할 부분 사각박스 씌우기
+        for i in range(len(exception_box)):
+            frame = cv2.rectangle(frame, tuple(exception_box[i]), (exception_box[i][0] + box_width, exception_box[i][1] + box_height), (0, 255, 0), 1)
+
+        if Start_Rivet_flag == 0:   # 시작할때 한번만 작동 플레그.
+
+            Rivet_center = []
+            cx_origin = 0
+            cy_origin = 0
+
+            _, contours, _ = cv2.findContours(final_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)  # 컨투어 찾기
+            if len(contours) != 0:
+                for contour in contours:
+                    if (cv2.contourArea(contour) > 800) and (cv2.contourArea(contour) < 4500):  # **필요한 면적을 찾아 중심점 좌표를 저장
+                        ball_area = cv2.contourArea(contour)
+                        mom = contour
+                        M = cv2.moments(mom)
+                        cx_origin = int(M['m10'] / M['m00'])
+                        cy_origin = int(M['m01'] / M['m00'])
+
+                        Rivet_center.append([cx_origin, cy_origin])       # 중심좌표 list에 추가
+
+                         # 좌표값 사각박스 내 예외 처리
+
+                        for i in range(len(exception_box)):
+                            if (cx_origin > exception_box[i][0] and cx_origin < (exception_box[i][0] + box_width)) and (cy_origin > exception_box[i][1] and cy_origin < (exception_box[i][1] + box_height)): # 중심좌표가 예외 처리 사각박스 안에 있나 비교
+                                Rivet_center.pop()      # 예외처리 박스 안에 있으면, append된 마지막 리스트를 다시 빼버림.
+
+                        cv2.circle(frame, (cx_origin, cy_origin), 10, (0, 255, 0), -1)  # 처음에 찍힌 원래 중심 좌표 표시, 예외처리 하기 전 중심좌표들 표시
+
+            ##### 자동 좌표값 저장하기 #####
+            print(cam + " 저장된 리벳의 좌표:", Rivet_center)  # 자동 저장된 중심점값 출력
+            Rivet_num = len(Rivet_center)  # 자동 저장된 리벳의 갯수값 저장.
+
+            for i in range(Rivet_num):
+                Rivet_tuple.append(tuple(Rivet_center[i]))  # 자동 저장된 리벳 좌표값을 튜플로 변환후 리스트에 저장. -> (Circle 마크에 쓰기 위해)
+
+            cv2.imshow('init_location' + cam + '.jpg', frame)    # 이미지 확인용.
+            cv2.imwrite('init_location' + cam + '.jpg', frame)   # 처음 이미지 캡쳐후 저장.
+            ##############################
+
+            Start_Rivet_flag = 1
+
+        #############################################################################
+
+        reverse = cv2.bitwise_not(final_mask)
+        reverse_copy = reverse.copy()
+
+        # ** 리벳을 검출할 위치에 원으로 좌표 표시.
+        for i in range(Rivet_num):
+            reverse_copy = cv2.circle(reverse_copy, Rivet_tuple[i], 10, (0, 0, 0), -1)      # 가운데 점 픽셀값 확인용 (x,y)값으로 받음.
+            frame = cv2.circle(frame, Rivet_tuple[i], 10, (0, 255, 255), -1)                # 원본에도 색상이 있는 점 표시.
+
+        # ** 한 픽셀당 Binary 값을 표시.
+        # [y , x]의 픽셀값 입력받음.
+        pixel_val_list = []
+
+        # 리벳이 탐지유무에 따른 화면 출력.
+        if Rivet_num != 0:
+            for i in range(Rivet_num):
+                pixel_val = reverse[Rivet_center[i][1], Rivet_center[i][0]]  # 픽셀값 저장 (0, 255)
+                if pixel_val == 255:                                         # 검출된곳은 1, 검출되지 않을곳은 0으로 변환.
+                    pixel_val = 0
+                else:
+                    pixel_val = 1
+
+                pixel_val_list.append(pixel_val)  # 변환된 값을 리스트에 추가
+                pixel_sum = sum(pixel_val_list)  # 모든 픽셀의 합
+
+            #print(pixel_val_list, pixel_sum)    # 픽셀값과 합계 출력
+
+            if pixel_sum == Rivet_num:
+                # 리벳의 갯수와 픽셀의 값이 일치하면 합격
+                judge = "OK"
+            else:
+                # 그 외 불합격
+                cv2.putText(frame, '**NG**', (50, 300), font, fontScale, (0, 0, 255), 2, cv2.LINE_AA)
+                judge = "NG"
+        else:
+            cv2.putText(frame, "No data", (50, 300), font, 2, (255, 0, 0), 2, cv2.LINE_AA)
+
+        cv2.imshow('Frame' + cam, frame)                      # 원본
+        cv2.imshow('result' + cam, final_mask)                # 필터링후
+        #cv2.imshow('reverse' + cam, reverse)                  # 반전 (픽셀값을 찍어보기 위해 흑백)
+        cv2.imshow('location_check' + cam, reverse_copy)      # 리벳위치 픽셀체크 위치 확인용
+
+        # 종료키
+        if cv2.waitKey(1) & 0xff == ord('q'):
+            break
+
+if __name__ == "__main__":
+
+    #카메라 번호 선택 0~2
+    execute(1)
+
