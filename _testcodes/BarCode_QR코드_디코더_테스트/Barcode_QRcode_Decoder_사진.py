@@ -1,6 +1,8 @@
-import pyzbar.pyzbar as pyzbar
-import numpy as np
-import cv2
+# Python Version 3.7.1
+
+import pyzbar.pyzbar as pyzbar	# pip install pyzbar
+import numpy as np				# pip install numpy
+import cv2						# pip install opencv-python
 
 
 def decode(im):

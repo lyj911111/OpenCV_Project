@@ -1,3 +1,5 @@
+# Python Version 3.7.1
+
 import cv2                      # pip install opencv-python
 import numpy as np              # pip install numpy
 import pyzbar.pyzbar as pyzbar  # pip install pyzbar
