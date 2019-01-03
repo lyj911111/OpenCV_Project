@@ -91,15 +91,18 @@ exception_box_cam2 = [[300, 300], [400, 400]]  # <======= 2번 카메라 이곳�
 exception_box_cam3 = [[200, 100], [300, 200]]  # <======= 3번 카메라 이곳에 예외처리할 사각박스 좌표를 입력.
 '''
 
+# 오늘 날짜
 def get_today():
     now = time.localtime()
     local_time = "%04d-%02d-%02d" % (now.tm_year, now.tm_mon, now.tm_mday)
     return local_time
 
+# 폴더 생성
 def make_folder(folder_name):
     if not os.path.isdir(folder_name):
         os.mkdir(folder_name)
 
+# 날짜 년도에 관한 정보
 def check_time_value():
     time = datetime.datetime.now()
     year = time.year
@@ -132,6 +135,7 @@ def check_rivet_result():
 
     print("count_pass_rivet : ", count_pass_rivet, "  count_fail_rivet: ", count_fail_rivet, "  accum : ", accum)
 
+# 로그 기록 남기기
 def leave_log(cam_no):
     global check_year, check_month, check_day, f
     global count_pass_rivet, count_fail_rivet, accum
@@ -186,6 +190,7 @@ def leave_log(cam_no):
     f.write(data)
     f.close()
 
+# 이미지 저장
 def image_save():
     global frame_cam1, frame_cam2, frame_cam3
     global Serial_No, today
@@ -200,7 +205,7 @@ def image_save():
     print("이미지 저장 완료")
     return image_add
 
-
+# GUI 내에 돌아가는 3개의 화면
 def webCamShow(N, Display, cam_no):
     _, frame = N
 
@@ -217,6 +222,7 @@ def webCamShow(N, Display, cam_no):
     Display.imgtk = imgtk
     Display.configure(image=imgtk)
 
+# 아래 움직이는 3개의 영상
 def imageShow(N, Display):
     frame = N
     cv2image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -367,6 +373,8 @@ def RivetDetect_cam1(frame):
     for i in range(len(exception_box_cam1)):
         frame = cv2.rectangle(frame, tuple(exception_box_cam1[i]), (exception_box_cam1[i][0] + box_width, exception_box_cam1[i][1] + box_height), (0, 255, 0), 1)
 
+################################################## 한번작동 #########################################################
+
     if Start_Rivet_flag_cam1 == 0:  # 시작할때 한번만 작동 플레그.
 
         Rivet_center1 = []
@@ -405,7 +413,7 @@ def RivetDetect_cam1(frame):
 
         Start_Rivet_flag_cam1 = 1
 
-    #############################################################################
+    ##########################################################################################################
 
     reverse = cv2.bitwise_not(final_mask)
     reverse_copy = reverse.copy()
@@ -606,7 +614,7 @@ def RivetDetect_cam2(frame):
         for i in range(Rivet_num2):
             Rivet_tuple.append(tuple(Rivet_center2[i]))  # 자동 저장된 리벳 좌표값을 튜플로 변환후 리스트에 저장. -> (Circle 마크에 쓰기 위해)
 
-        #cv2.imshow('init_location' + str(num) +'.jpg', frame)  # 이미지 확인용.
+        cv2.imshow('init_location' + str(num) +'.jpg', frame)  # 이미지 확인용.
         cv2.imwrite('init_location' + str(num) + '.jpg', frame)  # 처음 이미지 캡쳐후 저장.
         ##############################
 
@@ -814,7 +822,7 @@ def RivetDetect_cam3(frame):
         for i in range(Rivet_num3):
             Rivet_tuple.append(tuple(Rivet_center3[i]))  # 자동 저장된 리벳 좌표값을 튜플로 변환후 리스트에 저장. -> (Circle 마크에 쓰기 위해)
 
-        #cv2.imshow('init_location' + str(num) +'.jpg', frame)  # 이미지 확인용.
+        cv2.imshow('init_location' + str(num) +'.jpg', frame)  # 이미지 확인용.
         cv2.imwrite('init_location' + str(num) + '.jpg', frame)  # 처음 이미지 캡쳐후 저장.
         ##############################
 
@@ -906,13 +914,13 @@ def RivetDetect_cam3(frame):
     return frame
 
 
-# 1번 카메라 GUI 예외처리 추가 (사용자 입력)
+# 1번 카메라 GUI 예외처리 추가 (사용자 입력) **
 def add_exception_area_cam1():
     global exception_box_cam1
     global EB1_X, EB1_Y
     x = eval(EB1_X.get())
     y = eval(EB1_Y.get())
-    exception_box_cam1.append([x,y])
+    exception_box_cam1.append([x, y])
     EB1_X.delete(0, END)
     EB1_Y.delete(0, END)
 
