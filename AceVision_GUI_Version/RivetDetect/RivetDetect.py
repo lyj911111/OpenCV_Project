@@ -13,9 +13,11 @@ import time
 import os
 from tkinter import *
 
-# 카메라 선택
 
+# GUI창 크기
 width, height = 640, 480
+
+# 카메라 선택
 cap1 = cv2.VideoCapture(0)
 cap1.set(cv2.CAP_PROP_FRAME_WIDTH, width)
 cap1.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
@@ -26,17 +28,19 @@ cap3 = cv2.VideoCapture(2)
 cap3.set(cv2.CAP_PROP_FRAME_WIDTH, width)
 cap3.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
 
-
 # 데이터를 저장할 위치(서버저장)
 store_location = "C:\Data_Record_QR"
 
+# 예외처리 사각박스 크기 입력 **
+box_width = 70
+box_height = 70
+
+# 글자 모양 설정
 font = cv2.FONT_HERSHEY_COMPLEX  # normal size sans-serif font
 fontScale = 5
 thickness = 4
 
-# 시리얼번호 전역변수
-#serialnum = 123456789
-
+# 초기값 및 플레그
 OK = 0
 NG = 0
 
@@ -69,10 +73,6 @@ Rivet_num1 = 0
 Rivet_num2 = 0
 Rivet_num3 = 0
 
-# <======= 사각박스 크기 입력
-box_width = 70
-box_height = 70
-
 Start_Rivet_flag_cam1 = 0
 Start_Rivet_flag_cam2 = 0
 Start_Rivet_flag_cam3 = 0
@@ -90,7 +90,6 @@ exception_box_cam1 = [[100, 100], [200, 200]]  # <======= 1번 카메라 이곳�
 exception_box_cam2 = [[300, 300], [400, 400]]  # <======= 2번 카메라 이곳에 예외처리할 사각박스 좌표를 입력.
 exception_box_cam3 = [[200, 100], [300, 200]]  # <======= 3번 카메라 이곳에 예외처리할 사각박스 좌표를 입력.
 '''
-
 
 def get_today():
     now = time.localtime()
@@ -235,6 +234,7 @@ def Reformat_Image(image):
 
     return res
 
+# 바코드, QR코드 탐지
 def decode(im) :
     global Serial_No, pre_Serial_No, RV_SN
 
@@ -249,13 +249,14 @@ def decode(im) :
         print("Serial_No :", Serial_No)
 
 
-
+# 바코드 인식 카메라 추가 시 바코드 READ 함수 추가 위치 **
 def read_frame():
-    ## 바코드 인식 카메라 추가 시 바코드 리드 함수 추가 위치 ##
+
     global exception_box_cam1, exception_box_cam2, exception_box_cam3
     global Serial_No, pre_Serial_No
     global RV_SN, frame_cam3
 
+    # 사용자 예외처리 박스 입력칸
     webCamShow(cap1.read(), cam1_label, 1)
     webCamShow(cap2.read(), cam2_label, 2)
     webCamShow(cap3.read(), cam3_label, 3)
@@ -278,6 +279,7 @@ def read_frame():
         leave_log(4)
         print("로그 완료")
 
+    # 예외처리된 구간 출력
     print("exception_box_cam1", exception_box_cam1)
     print("exception_box_cam2", exception_box_cam2)
     print("exception_box_cam3", exception_box_cam3)
@@ -355,7 +357,6 @@ def RivetDetect_cam1(frame):
 
     #################### 리벳 중심좌표값 자동 저장용 ##########################
 
-
     Rivet_tuple = Rivet_tuple_cam1
     num = 1
     judge1 = ''
@@ -364,8 +365,7 @@ def RivetDetect_cam1(frame):
 
     # 예외 처리할 부분 사각박스 씌우기
     for i in range(len(exception_box_cam1)):
-        frame = cv2.rectangle(frame, tuple(exception_box_cam1[i]),
-                              (exception_box_cam1[i][0] + box_width, exception_box_cam1[i][1] + box_height), (0, 255, 0), 1)
+        frame = cv2.rectangle(frame, tuple(exception_box_cam1[i]), (exception_box_cam1[i][0] + box_width, exception_box_cam1[i][1] + box_height), (0, 255, 0), 1)
 
     if Start_Rivet_flag_cam1 == 0:  # 시작할때 한번만 작동 플레그.
 
@@ -386,11 +386,8 @@ def RivetDetect_cam1(frame):
                     Rivet_center1.append([cx_origin, cy_origin])  # 중심좌표 list에 추가
 
                     # 좌표값 사각박스 내 예외 처리
-
                     for i in range(len(exception_box_cam1)):
-                        if (cx_origin > exception_box_cam1[i][0] and cx_origin < (exception_box_cam1[i][0] + box_width)) and (
-                                cy_origin > exception_box_cam1[i][1] and cy_origin < (
-                                exception_box_cam1[i][1] + box_height)):  # 중심좌표가 예외 처리 사각박스 안에 있나 비교
+                        if (cx_origin > exception_box_cam1[i][0] and cx_origin < (exception_box_cam1[i][0] + box_width)) and (cy_origin > exception_box_cam1[i][1] and cy_origin < (exception_box_cam1[i][1] + box_height)):  # 중심좌표가 예외 처리 사각박스 안에 있나 비교
                             Rivet_center1.pop()  # 예외처리 박스 안에 있으면, append된 마지막 리스트를 다시 빼버림.
 
                     cv2.circle(frame, (cx_origin, cy_origin), 10, (0, 255, 0), -1)  # 처음에 찍힌 원래 중심 좌표 표시, 예외처리 하기 전 중심좌표들 표시
@@ -402,7 +399,7 @@ def RivetDetect_cam1(frame):
         for i in range(Rivet_num1):
             Rivet_tuple.append(tuple(Rivet_center1[i]))  # 자동 저장된 리벳 좌표값을 튜플로 변환후 리스트에 저장. -> (Circle 마크에 쓰기 위해)
 
-        #cv2.imshow('init_location' + str(num) +'.jpg', frame)  # 이미지 확인용.
+        cv2.imshow('init_location' + str(num) +'.jpg', frame)  # 이미지 확인용.
         cv2.imwrite('init_location' + str(num) + '.jpg', frame)  # 처음 이미지 캡쳐후 저장.
         ##############################
 
@@ -909,7 +906,7 @@ def RivetDetect_cam3(frame):
     return frame
 
 
-
+# 1번 카메라 GUI 예외처리 추가 (사용자 입력)
 def add_exception_area_cam1():
     global exception_box_cam1
     global EB1_X, EB1_Y
@@ -919,7 +916,7 @@ def add_exception_area_cam1():
     EB1_X.delete(0, END)
     EB1_Y.delete(0, END)
 
-
+# 2번 카메라 GUI 예외처리 추가
 def add_exception_area_cam2():
     global exception_box_cam2
     global EB2_X, EB2_Y
@@ -929,7 +926,7 @@ def add_exception_area_cam2():
     EB2_X.delete(0, END)
     EB2_Y.delete(0, END)
 
-
+# 3번 카메라 GUI 예외처리 추가
 def add_exception_area_cam3():
     global exception_box_cam3
     global EB3_X, EB3_Y
@@ -969,7 +966,7 @@ def execute():
     name = ["시리얼 넘버 입력\nInput SerialNumber", "시리얼 넘버\nSerialNumber", "판독시간\nTime", "판독 수량\nNo. of Accumulation",
             "합격 수량\nNo. of OK", "불합격수량\nNo. of NG"]
 
-    ##Label 생성
+    # Label 생성
     for i in range(6):
         Label(root, text=name[i], height=5, width=17, fg="red", relief="groove", bg="#ebebeb") \
             .place(x=95, y=(qr_height / 3) + 140 + (i * 80), relx=0.01, rely=0.01)
@@ -1027,7 +1024,7 @@ def execute():
     RV_P5 = Entry(root, width=19, relief="groove", font="Helvetica 50 bold")
     RV_P5.place(x=218, y=(qr_height / 3) + 140 + (5 * 80), relx=0.01, rely=0.01)
 
-    ###예외 지역 설정 엔트리
+    # 예외 지역 설정 엔트리
     EB1_X = Entry(root, width=5, relief="groove", font="Helvetica 50 bold")
     EB1_X.place(x=1180, y=(qr_height / 3) + 403 + (0 * 80), relx=0.01, rely=0.01)
 
