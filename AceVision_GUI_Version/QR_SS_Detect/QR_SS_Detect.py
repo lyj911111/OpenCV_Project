@@ -14,8 +14,8 @@ import time
 import os
 from tkinter import *
 
-# 카메라 선택
 
+#카메라 구동 설정
 width, height = 640, 480
 cap0 = cv2.VideoCapture(1)
 cap0.set(cv2.CAP_PROP_FRAME_WIDTH, width)
@@ -23,12 +23,12 @@ cap0.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
 cap1 = cv2.VideoCapture(2)
 cap1.set(cv2.CAP_PROP_FRAME_WIDTH, width)
 cap1.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
-# cap2 = cv2.VideoCapture(2)
-# cap2.set(cv2.CAP_PROP_FRAME_WIDTH, width)
-# cap2.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+cap2 = cv2.VideoCapture(3)
+cap2.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+cap2.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
 
 # 데이터를 저장할 위치(서버저장)
-store_location = "C:\Data_Record_QR/"
+store_location = "D:/workspace/vision/AceVision/"
 
 #전역 변수
 check_year = 0
@@ -56,19 +56,13 @@ pre_accumulation = 1000
 pre_volume = 1000
 qr_value_list = ['', " ", " ", " ", " ", " "]
 ss_value_list = ['', " ", " ", " ", " ", " "]
-qr_value_list[0] = NONE
-ss_value_list[0] = NONE
-Serial_No = 0
+#qr_value_list[0] = NONE
+#ss_value_list[0] = NONE
+Serial_No = ''
 
 
-def decode(image) :
-    data = str(decode(image))
-    #print(data)
-    sn = data[24:37]
-
-    print("decodedObjects:", data)
-    print("Serial_No :", sn)
-
+#def decode(image) :
+#    pass
 
 def webCamShow_QR(N, Display):
     global Serial_N
@@ -99,20 +93,10 @@ def read_frame():
     print("len : ", len(SS_SN.get()), len(QR_SN.get()))
     print("process : ", ss_check_process, qr_check_process)
 
-    '''
-    if check_serial_no == 0:
-        Serial_No = ''
-        check_serial_no = 1
-    '''
-
     if (qr_check_process == 0 and ss_check_process == 0) and len(SS_SN.get()) != 0:
-        print("123")
         Serial_No = SS_SN.get()
-        print(Serial_No)
     elif (qr_check_process == 0 and ss_check_process == 0) and len(QR_SN.get()) != 0:
-        print("456")
         Serial_No = QR_SN.get()
-        print(Serial_No)
     elif (qr_check_process == 1 or ss_check_process == 1):
         print("판독 중")
 
@@ -126,9 +110,9 @@ def read_frame():
         qr_check_process = 0
         print(Serial_No, qr_check_process, qr_check_process)
 
-    webCamShow_QR(cap0.read(), qr_label)
-    webCamShow_SS(cap1.read(), sticker_label)
-    root.after(50, read_frame)
+    webCamShow_QR(cap1.read(), qr_label)
+    webCamShow_SS(cap0.read(), sticker_label)
+    root.after(10, read_frame)
 
 def get_today():
     global Serial_No
@@ -201,10 +185,19 @@ def leave_log(check_function):
     f.close()
 
 
+
+def Reformat_Image(image):
+    height, width = image.shape[:2]
+    width = int(width*3/2)
+    height = int(height*3/2)
+    res = cv2.resize(image, (width, height), interpolation=cv2.INTER_AREA)
+
+    return res
+
 def QRDetect(frame):
     global pre_accumulation, qr_check_make_folder
     global count_pass_barcode, count_fail_barcode, accumulation
-    global Serial_No
+    global Serial_No, QR_SN
     global qr_cx, qr_cy, qr_check_result
     global qr_check_process, ss_check_process
 
@@ -219,10 +212,7 @@ def QRDetect(frame):
     frame2 = frame.copy()
     frame3 = frame.copy()
 
-
-    #frame4 = frame.copy()
-    #decode(frame4)
-
+    frame4 = frame.copy()
 
     cv2.rectangle(frame3, (qr_x1, qr_y1), (qr_x2, qr_y2), (255, 0, 0), 3)
     cx_ref = int(abs(qr_x1 + qr_x2) / 2)
@@ -267,17 +257,17 @@ def QRDetect(frame):
     final_mask = cv2.bitwise_and(final_mask, s1)
     final_mask = cv2.bitwise_and(final_mask, v1)
     final_mask = cv2.bitwise_and(final_mask, H1)
-    final_mask = cv2.bitwise_and(final_mask, L1)
-    final_mask = cv2.bitwise_and(final_mask, S1)
-
-    final_mask = cv2.bitwise_and(final_mask, gray_)
-    final_mask = cv2.bitwise_and(final_mask, blue_)
-    final_mask = cv2.bitwise_and(final_mask, green_)
-    final_mask = cv2.bitwise_and(final_mask, red_)
-    # final_mask = cv2.bitwise_and(final_mask, h_)
-    # final_mask = cv2.bitwise_and(final_mask, s_)
-    final_mask = cv2.bitwise_and(final_mask, v_)
-    # final_mask = cv2.bitwise_and(final_mask, H_)
+    #     final_mask = cv2.bitwise_and(final_mask, L1)
+    #     final_mask = cv2.bitwise_and(final_mask, S1)
+    #
+    #     final_mask = cv2.bitwise_and(final_mask, gray_)
+    #     final_mask = cv2.bitwise_and(final_mask, blue_)
+    #     final_mask = cv2.bitwise_and(final_mask, green_)
+    #     final_mask = cv2.bitwise_and(final_mask, red_)
+    #     # final_mask = cv2.bitwise_and(final_mask, h_)
+    #     # final_mask = cv2.bitwise_and(final_mask, s_)
+    #     final_mask = cv2.bitwise_and(final_mask, v_)
+    #     # final_mask = cv2.bitwise_and(final_mask, H_)
     # final_mask = cv2.bitwise_and(final_mask, L_)
     # final_mask = cv2.bitwise_and(final_mask, S_)
     result = cv2.bitwise_and(frame2, frame2, mask=final_mask)
@@ -359,8 +349,34 @@ def QRDetect(frame):
         print("len : ", len(SS_SN.get()), len(QR_SN.get()))
         if (len(SS_SN.get()) != 0 or len(QR_SN.get()) != 0):
             print("테스트")
-        if abs(qr_cx - cx_ref) <= 1 and (10000 <= Area and Area <= 18000) and str(Serial_No) != '' and qr_check_process == 0 and qr_check_result == 2:
+        if abs(qr_cx - cx_ref) <= 1 and (10000 <= Area and Area <= 18000)  and qr_check_process == 0 and qr_check_result == 2:
             # if abs(int(box_x0) - int(qr_x1)) <= 2 and 10000<=Area and Area <= 18000:
+
+            cv2.imwrite("./barcode_read.jpg", frame3)
+
+            print(qr_cx, qr_cy)
+            #roi = frame4[(qr_cx-56)-100+191-20:(qr_cx+56)-100+191+20, (qr_cy-66)-100-20:(qr_cy+66)-100+10]
+            #roi = frame4[(qr_cx +15):(qr_cx + 167),(qr_cy - 186):(qr_cy -24)]
+            roi = frame4[(qr_cx + 0):(qr_cx + 175), (qr_cy - 190):(qr_cy - 15)]
+            #roi = cv2.copyMakeBorder(roi,3,3,3,3,cv2.BORDER_CONSTANT,value=[255,255,255])
+            qr_image = Reformat_Image(roi)
+
+            #print("이미지 저장")
+            #test = cv2.imread("./barcode_read.jpg")
+            #cv2.imshow("test", test)
+
+            cv2.imshow("qr_image", qr_image)
+
+            #cv2.imwrite("./test.jpg", test)
+            data = str(decode(qr_image))
+            print(data)
+            #print(data)
+            sn = data[24:37]
+            print(sn)
+            Serial_No = sn
+            QR_SN.insert(20, Serial_No)
+
+
             print("=====  판독 중  =====")
             qr_check_process = 1
             if qr_check_make_folder == 0:
@@ -530,7 +546,7 @@ def SSDetect(frame):
     img_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
     ################# 템플릿 경로 설정 ########################
-    template = cv2.imread('C:\Data_Record_QR/template.jpg', 0)
+    template = cv2.imread('D:/workspace/vision/AceVision/image/template.png', 0)
     ##########################################################
 
     w, h = template.shape[::-1]
@@ -616,7 +632,7 @@ def SSDetect(frame):
         print("len : ", len(SS_SN.get()), len(QR_SN.get()))
         if str(Serial_No) != '':
             print("str 시리얼 테스트")
-        if abs(ss_cx - cx_ref) <= 1 and (35000 <= Area and Area <= 75000) and str(Serial_No) != '' and ss_check_process == 0 and ss_check_result == 2:
+        if abs(ss_cx - cx_ref) <= 1 and (35000 <= Area and Area <= 75000) and str(Serial_No) != '' and (qr_check_process == 1 and ss_check_process == 0) and ss_check_result == 2:
             # if abs(cx - cx_ref) <= 1 and (10000 <= Area and Area <= 18000):
             print("=====  판독 중  =====")
             ss_check_process = 1

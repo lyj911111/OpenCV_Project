@@ -13,19 +13,22 @@ def nothing(x):
 # 사용할 카메라를 인자로 받음 ( 선택카메라(0,1,2) )
 def execute(cam):
 
+    # NG출력 폰트, 문자크기, 두께 설정.
+    font = cv2.FONT_HERSHEY_COMPLEX  # normal size sans-serif font
+    fontScale = 5
+
     # 사용할 카메라 설정.
     cap = cv2.VideoCapture(cam)
-    cv2.namedWindow("Trackbars" + str(cam), cv2.WINDOW_NORMAL)
+    cv2.namedWindow("Trackbars", cv2.WINDOW_NORMAL)
 
     # 플레그, 초기값
-    Start_Rivet_flag = 0
     Rivet_tuple = []                                  # 튜플값을 저장할 리스트
     camm = cam                                        # 예외처리 박스 int형 변수 전달.
     cam = str(cam)                                    # 실행창 번호 할당을 위해
 
     # FIND_BLACK
     cv2.createTrackbar("graybar", "Trackbars", 255, 255, nothing)  # 135
-    cv2.createTrackbar("bluebar", "Trackbars", 225, 255, nothing)  # 110
+    cv2.createTrackbar("bluebar", "Trackbars", 255, 255, nothing)  # 110
     cv2.createTrackbar("greenbar", "Trackbars", 240, 255, nothing)  # 101
     cv2.createTrackbar("redbar", "Trackbars", 255, 255, nothing)  # 101
     cv2.createTrackbar("hsv hbar", "Trackbars", 255, 255, nothing)  # 255
@@ -57,7 +60,7 @@ def execute(cam):
 
         # col,row,_ = frame.shape # frame 화면크기 출력, (y ,x) = (480x640)
         # print(col,row)
-        frame2 = frame.copy()  # 영상원본
+        frame2 = frame.copy() # 영상원본
 
         frame = cv2.GaussianBlur(frame, (3, 3), 0)              # 원본에 가우시안 필터적용
         gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -140,6 +143,7 @@ def execute(cam):
         # final_mask = cv2.bitwise_and(final_mask, H_)
         # final_mask = cv2.bitwise_and(final_mask, L_)
         # final_mask = cv2.bitwise_and(final_mask, S_)
+
         final_mask = cv2.dilate(final_mask, kernel, iterations=1)
         # final_mask = cv2.dilate(final_mask, kernel, iterations=1)
         # final_mask = cv2.dilate(final_mask, kernel, iterations=1)
@@ -157,16 +161,16 @@ def execute(cam):
         ero_ero = cv2.erode(erosion, kernel, iterations=1)
         # opening = cv2.morphologyEx(final_mask, cv2.MORPH_OPEN, kernel)
         # closing = cv2.morphologyEx(final_mask, cv2.MORPH_CLOSE, kernel)
-
         ############# 테스트 ##############################################
 
         #################### 리벳 중심좌표값 자동 저장용 ##########################
+
         Rivet_center = []
 
         _, contours, _ = cv2.findContours(final_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)  # 컨투어 찾기
         if len(contours) != 0:
             for contour in contours:
-                if (cv2.contourArea(contour) > 30) and (cv2.contourArea(contour) < 500):  # **필요한 면적을 찾아 중심점 표시
+                if (cv2.contourArea(contour) > 30) and (cv2.contourArea(contour) < 500):  # **필요한 면적을 찾아 중심점 좌표를 저장
                     ball_area = cv2.contourArea(contour)
                     mom = contour
                     M = cv2.moments(mom)
@@ -174,10 +178,10 @@ def execute(cam):
                     cy_origin = int(M['m01'] / M['m00'])
 
                     cv2.circle(frame, (cx_origin, cy_origin), 5, (0, 255, 255), -1)  # 중심 좌표 표시
-                    Rivet_center.append([cx_origin, cy_origin])  # 중심좌표 list에 추가
+                    Rivet_center.append([cx_origin, cy_origin])
 
         ##### 자동 좌표값 저장하기 #####
-        print(Rivet_center)  # 자동 저장된 중심점값 출력
+        print(cam + " 저장된 리벳의 좌표:", Rivet_center)  # 자동 저장된 중심점값 출력
         Rivet_num = len(Rivet_center)  # 자동 저장된 리벳의 갯수값 저장.
 
         for i in range(Rivet_num):
@@ -186,16 +190,15 @@ def execute(cam):
         reverse = cv2.bitwise_not(final_mask)
         reverse_copy = reverse.copy()
 
-        # # ** 리벳을 검출할 위치에 원으로 좌표 표시.
+        # ** 리벳을 검출할 위치에 원으로 좌표 표시.
         # for i in range(Rivet_num):
         #     reverse_copy = cv2.circle(reverse_copy, Rivet_tuple[i], 10, (0, 0, 0), -1)      # 가운데 점 픽셀값 확인용 (x,y)값으로 받음.
         #     frame = cv2.circle(frame, Rivet_tuple[i], 10, (0, 255, 255), -1)                # 원본에도 색상이 있는 점 표시.
 
-
         cv2.imshow('Frame' + cam, frame)                      # 원본
-        cv2.imshow('result' + cam, final_mask)                # 필터링후
-        #cv2.imshow('reverse' + cam, reverse)                  # 반전 (픽셀값을 찍어보기 위해 흑백)
-        cv2.imshow('location_check' + cam, reverse_copy)      # 리벳위치 픽셀체크 위치 확인용
+        cv2.imshow('final_mask' + cam, final_mask)                # 필터링후
+        # cv2.imshow('reverse' + cam, reverse)                  # 반전 (픽셀값을 찍어보기 위해 흑백)
+        # cv2.imshow('location_check' + cam, reverse_copy)      # 리벳위치 픽셀체크 위치 확인용
 
         # 종료키
         if cv2.waitKey(1) & 0xff == ord('q'):
