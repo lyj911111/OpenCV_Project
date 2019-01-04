@@ -27,11 +27,15 @@ cap3.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
 
 
 # 데이터를 저장할 위치(서버저장)
-store_location = "C:\Data_Record/"
+store_location = "D:/workspace/vision/AceVision/"
 
 font = cv2.FONT_HERSHEY_COMPLEX  # normal size sans-serif font
 fontScale = 5
 thickness = 4
+
+# <======= 사각박스 크기 입력
+box_width = 0
+box_height = 0
 
 # 시리얼번호 전역변수
 #serialnum = 123456789
@@ -68,13 +72,32 @@ Rivet_num1 = 0
 Rivet_num2 = 0
 Rivet_num3 = 0
 
-# <======= 사각박스 크기 입력
-box_width = 10
-box_height = 10
+cam1_box_idx = 0
+cam2_box_idx = 0
+cam3_box_idx = 0
+
+cam1_rect_list = []
+cam2_rect_list = []
+cam3_rect_list = []
+
+cam1_except_list = []
+cam2_except_list = []
+cam3_except_list = []
 
 Start_Rivet_flag_cam1 = 0
 Start_Rivet_flag_cam2 = 0
 Start_Rivet_flag_cam3 = 0
+
+Start_except_box_cam1 = 0
+Start_except_box_cam2 = 0
+Start_except_box_cam3 = 0
+
+cam1_box_width = 0
+cam1_box_height = 0
+cam2_box_width = 0
+cam2_box_height = 0
+cam3_box_width = 0
+cam3_box_height = 0
 
 Rivet_tuple_cam1 = []
 Rivet_tuple_cam2 = []
@@ -83,6 +106,14 @@ Rivet_tuple_cam3 = []
 exception_box_cam1 = []
 exception_box_cam2 = []
 exception_box_cam3 = []
+
+rivet_center_flag1 = 0
+rivet_center_flag2 = 0
+rivet_center_flag3 = 0
+
+save_revet_center1 = []
+save_revet_center2 = []
+save_revet_center3 = []
 
 '''
 exception_box_cam1 = [[100, 100], [200, 200]]  # <======= 1번 카메라 이곳에 예외처리할 사각박스 좌표를 입력.
@@ -283,7 +314,7 @@ def read_frame():
     print("Rivet_center2", Rivet_center2)
     print("Rivet_center3", Rivet_center3)
 
-    root.after(10, read_frame)
+    root.after(1, read_frame)
 
 
 def RivetDetect_cam1(frame):
@@ -293,6 +324,7 @@ def RivetDetect_cam1(frame):
     global Serial_No, check_result, Rivet_center1
     global frame_cam1, check_rivet_pass_cam1, check_rivet_fail_cam1
     global exception_box_cam1, final_mask1
+    global box_width, box_height, cam1_box_idx
 
     # col,row,_ = frame.shape # frame 화면크기 출력, (y ,x) = (480x640)
     # print(col,row)
@@ -361,9 +393,11 @@ def RivetDetect_cam1(frame):
     check_rivet_pass_cam1 = 0
     check_rivet_fail_cam1 = 0
 
+    #cam1_rect_list.append(cam1_box_idx)
     # 예외 처리할 부분 사각박스 씌우기
     for i in range(len(exception_box_cam1)):
-        frame = cv2.rectangle(frame, tuple(exception_box_cam1[i]),(exception_box_cam1[i][0] + box_width, exception_box_cam1[i][1] + box_height), (0, 255, 0), 1)
+        if i == cam1_box_idx:
+            frame = cv2.rectangle(frame, tuple(exception_box_cam1[i]),(exception_box_cam1[i][0] + box_width, exception_box_cam1[i][1] + box_height), (0, 255, 0), 1)
 
     if Start_Rivet_flag_cam1 == 0:  # 시작할때 한번만 작동 플레그.
         #Rivet_tuple = Rivet_tuple_cam1
@@ -414,7 +448,7 @@ def RivetDetect_cam1(frame):
         # ** 리벳을 검출할 위치에 원으로 좌표 표시.
     for i in range(Rivet_num1):
         reverse_copy = cv2.circle(reverse_copy, Rivet_tuple_cam1[i], 10, (0, 0, 0), -1)  # 가운데 점 픽셀값 확인용 (x,y)값으로 받음.
-        frame = cv2.circle(frame, Rivet_tuple_cam1[i], 10, (0, 255, 255), -1)  # 원본에도 색상이 있는 점 표시.
+        frame = cv2.circle(frame, Rivet_tuple_cam1[i], 3, (0, 255, 255), -1)  # 원본에도 색상이 있는 점 표시.
 
     # ** 한 픽셀당 Binary 값을 표시.
     # [y , x]의 픽셀값 입력받음.
@@ -427,6 +461,8 @@ def RivetDetect_cam1(frame):
             pixel_val1 = reverse[Rivet_center1[i][1], Rivet_center1[i][0]]  # 픽셀값 저장 (0, 255)
             if pixel_val1 == 255:  # 검출된곳은 1, 검출되지 않을곳은 0으로 변환.
                 pixel_val1 = 0
+                cv2.putText(frame, '%d, %d' % (Rivet_center1[i][0], Rivet_center1[i][1]),
+                            (Rivet_center1[i][0], Rivet_center1[i][1]), font, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
             else:
                 pixel_val1 = 1
 
@@ -498,6 +534,7 @@ def RivetDetect_cam2(frame):
     global Serial_No, check_result, Rivet_center2
     global frame_cam2, check_rivet_pass_cam2, check_rivet_fail_cam2
     global exception_box_cam2, final_mask2
+    global box_width, box_height, cam2_box_idx
 
     # col,row,_ = frame.shape # frame 화면크기 출력, (y ,x) = (480x640)
     # print(col,row)
@@ -569,7 +606,8 @@ def RivetDetect_cam2(frame):
 
     # 예외 처리할 부분 사각박스 씌우기
     for i in range(len(exception_box_cam2)):
-        frame = cv2.rectangle(frame, tuple(exception_box_cam2[i]),
+        if i == cam1_box_idx:
+            frame = cv2.rectangle(frame, tuple(exception_box_cam2[i]),
                               (exception_box_cam2[i][0] + box_width, exception_box_cam2[i][1] + box_height), (0, 255, 0), 1)
 
     if Start_Rivet_flag_cam2 == 0:  # 시작할때 한번만 작동 플레그.
@@ -622,7 +660,7 @@ def RivetDetect_cam2(frame):
         # ** 리벳을 검출할 위치에 원으로 좌표 표시.
     for i in range(Rivet_num2):
         reverse_copy = cv2.circle(reverse_copy, Rivet_tuple_cam2[i], 10, (0, 0, 0), -1)  # 가운데 점 픽셀값 확인용 (x,y)값으로 받음.
-        frame = cv2.circle(frame, Rivet_tuple_cam2[i], 10, (0, 255, 255), -1)  # 원본에도 색상이 있는 점 표시.
+        frame = cv2.circle(frame, Rivet_tuple_cam2[i], 3, (0, 255, 255), -1)  # 원본에도 색상이 있는 점 표시.
 
     # ** 한 픽셀당 Binary 값을 표시.
     # [y , x]의 픽셀값 입력받음.
@@ -635,6 +673,8 @@ def RivetDetect_cam2(frame):
             pixel_val2 = reverse[Rivet_center2[i][1], Rivet_center2[i][0]]  # 픽셀값 저장 (0, 255)
             if pixel_val2 == 255:  # 검출된곳은 1, 검출되지 않을곳은 0으로 변환.
                 pixel_val2 = 0
+                cv2.putText(frame, '%d, %d' % (Rivet_center2[i][0], Rivet_center2[i][1]),
+                            (Rivet_center2[i][0], Rivet_center2[i][1]), font, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
             else:
                 pixel_val2 = 1
 
@@ -707,6 +747,8 @@ def RivetDetect_cam3(frame):
     global Serial_No, check_result, Rivet_center3
     global frame_cam3, check_rivet_pass_cam3, check_rivet_fail_cam3
     global exception_box_cam3, final_mask3
+    global box_width, box_height, cam3_box_idx, cam3_rect_list, Start_except_box_cam3
+    global cam3_except_list, cam3_box_width, cam3_box_height
 
     # col,row,_ = frame.shape # frame 화면크기 출력, (y ,x) = (480x640)
     # print(col,row)
@@ -770,16 +812,24 @@ def RivetDetect_cam3(frame):
 
     #################### 리벳 중심좌표값 자동 저장용 ##########################
 
-
     num = 3
     judge3 = ''
     check_rivet_pass_cam3 = 0
     check_rivet_fail_cam3 = 0
 
-    # 예외 처리할 부분 사각박스 씌우기
-    for i in range(len(exception_box_cam3)):
-        frame = cv2.rectangle(frame, tuple(exception_box_cam3[i]),
-                              (exception_box_cam3[i][0] + box_width, exception_box_cam3[i][1] + box_height), (0, 255, 0), 1)
+    print("*"*10)
+    print(Start_except_box_cam3)
+
+    if Start_except_box_cam3 == 1:
+        cam3_rect_list.append(cam3_box_idx)
+        cam3_except_list.append([cam3_box_width, cam3_box_height])
+        Start_except_box_cam3 = 0
+        print("rect_list", cam3_rect_list)
+        print(exception_box_cam3)
+    for i in range(len(cam3_rect_list)):
+        frame = cv2.rectangle(frame, ( exception_box_cam3[i][0] - int( (cam3_except_list[i][0])/2 ), exception_box_cam3[i][1] - int( (cam3_except_list[i][1]) /2) ), \
+                              (exception_box_cam3[i][0] + int( (cam3_except_list[i][0]) /2), exception_box_cam3[i][1] + int( (cam3_except_list[i][1]) /2)), (0, 255, 0), 1)
+
 
     if Start_Rivet_flag_cam3 == 0:  # 시작할때 한번만 작동 플레그.
         #Rivet_tuple = Rivet_tuple_cam3
@@ -832,7 +882,7 @@ def RivetDetect_cam3(frame):
         # ** 리벳을 검출할 위치에 원으로 좌표 표시.
     for i in range(Rivet_num3):
         reverse_copy = cv2.circle(reverse_copy, Rivet_tuple_cam3[i], 10, (0, 0, 0), -1)  # 가운데 점 픽셀값 확인용 (x,y)값으로 받음.
-        frame = cv2.circle(frame, Rivet_tuple_cam3[i], 10, (0, 255, 255), -1)  # 원본에도 색상이 있는 점 표시.
+        frame = cv2.circle(frame, Rivet_tuple_cam3[i], 3, (0, 255, 255), -1)  # 원본에도 색상이 있는 점 표시.
 
     # ** 한 픽셀당 Binary 값을 표시.
     # [y , x]의 픽셀값 입력받음.
@@ -845,6 +895,10 @@ def RivetDetect_cam3(frame):
             pixel_val3 = reverse[Rivet_center3[i][1], Rivet_center3[i][0]]  # 픽셀값 저장 (0, 255)
             if pixel_val3 == 255:  # 검출된곳은 1, 검출되지 않을곳은 0으로 변환.
                 pixel_val3 = 0
+                if Rivet_center3[i][0]>= 550:
+                    cv2.putText(frame, '%d, %d' % (Rivet_center3[i][0]-50, Rivet_center3[i][1]),(Rivet_center3[i][0], Rivet_center3[i][1]), font, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
+                else:
+                    cv2.putText(frame, '%d, %d'%(Rivet_center3[i][0], Rivet_center3[i][1]), (Rivet_center3[i][0], Rivet_center3[i][1]), font, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
             else:
                 pixel_val3 = 1
 
@@ -858,7 +912,7 @@ def RivetDetect_cam3(frame):
             judge3 = "OK"
         else:
             # 그 외 불합격
-            cv2.putText(frame, '**NG**', (50, 300), font, fontScale, (0, 0, 255), 2, cv2.LINE_AA)
+            #cv2.putText(frame, '**NG**', (50, 300), font, fontScale, (0, 0, 255), 2, cv2.LINE_AA)
             judge3 = "NG"
     else:
         cv2.putText(frame, "No data", (50, 300), font, 2, (255, 0, 0), 2, cv2.LINE_AA)
@@ -911,26 +965,32 @@ def RivetDetect_cam3(frame):
 
 def add_exception_area_cam1():
     global exception_box_cam1
-    global EB1_X, EB1_Y
+    global EB1_X, EB1_Y, EB1_W, EB1_H
     global Rivet_center1, Rivet_num1
     global Start_Rivet_flag_cam1
     global box_width, box_height
+    global cam1_box_idx
     x = eval(EB1_X.get())
     y = eval(EB1_Y.get())
+    box_width = eval(EB1_W.get())
+    box_height = eval(EB1_H.get())
     exception_box_cam1.append([x,y])
     EB1_X.delete(0, END)
     EB1_Y.delete(0, END)
+    EB1_W.delete(0, END)
+    EB1_H.delete(0, END)
     #Start_Rivet_flag_cam1 = 0
     #Rivet_center1.remove([x,y])
 
     list_delete_item = []
     for i in range(len(exception_box_cam1)):
         for j in range(len(Rivet_center1)):
-            if ((exception_box_cam1[i][0] - box_width) < Rivet_center1[j][0]) and (
-                    Rivet_center1[j][0] < (exception_box_cam1[i][0] + box_width)) and (
-                    (exception_box_cam1[i][1] - box_height) < Rivet_center1[j][1]) and (
-                    Rivet_center1[j][1] < (exception_box_cam1[i][1] + box_height)):
+            if ((exception_box_cam1[i][0] - box_width) <= Rivet_center1[j][0]) and (
+                    Rivet_center1[j][0] <= (exception_box_cam1[i][0] + box_width)) and (
+                    (exception_box_cam1[i][1] - box_height) <= Rivet_center1[j][1]) and (
+                    Rivet_center1[j][1] <= (exception_box_cam1[i][1] + box_height)):
                 list_delete_item.append([Rivet_center1[j][0], Rivet_center1[j][1]])
+                cam1_box_idx = i
 
     list_delete_item = list(unique_everseen(list_delete_item))
     for i in range(len(list_delete_item)):
@@ -941,15 +1001,20 @@ def add_exception_area_cam1():
 
 def add_exception_area_cam2():
     global exception_box_cam2
-    global EB2_X, EB2_Y
+    global EB2_X, EB2_Y, EB2_W, EB2_H
     global Rivet_center2, Rivet_num2
     global Start_Rivet_flag_cam2
     global box_width, box_height
+    global cam2_box_idx
     x = eval(EB2_X.get())
     y = eval(EB2_Y.get())
+    box_width = eval(EB2_W.get())
+    box_height = eval(EB2_H.get())
     exception_box_cam2.append([x, y])
     EB2_X.delete(0, END)
     EB2_Y.delete(0, END)
+    EB2_W.delete(0, END)
+    EB2_H.delete(0, END)
     #Start_Rivet_flag_cam2 = 0
     #Rivet_center2.remove([x, y])
 
@@ -960,11 +1025,12 @@ def add_exception_area_cam2():
     list_delete_item = []
     for i in range(len(exception_box_cam2)):
         for j in range(len(Rivet_center2)):
-            if ((exception_box_cam2[i][0] - box_width) < Rivet_center2[j][0]) and (
-                    Rivet_center2[j][0] < (exception_box_cam2[i][0] + box_width)) and (
-                    (exception_box_cam2[i][1] - box_height) < Rivet_center2[j][1]) and (
-                    Rivet_center2[j][1] < (exception_box_cam2[i][1] + box_height)):
+            if ((exception_box_cam2[i][0] - box_width) <= Rivet_center2[j][0]) and (
+                    Rivet_center2[j][0] <= (exception_box_cam2[i][0] + box_width)) and (
+                    (exception_box_cam2[i][1] - box_height) <= Rivet_center2[j][1]) and (
+                    Rivet_center2[j][1] <= (exception_box_cam2[i][1] + box_height)):
                 list_delete_item.append([Rivet_center2[j][0], Rivet_center2[j][1]])
+                cam2_box_idx = i
 
     list_delete_item = list(unique_everseen(list_delete_item))
     for i in range(len(list_delete_item)):
@@ -974,38 +1040,61 @@ def add_exception_area_cam2():
 
 def add_exception_area_cam3():
     global exception_box_cam3
-    global EB3_X, EB3_Y
+    global EB3_X, EB3_Y, EB3_W, EB3_H
     global Rivet_center3, Rivet_num3
     global Start_Rivet_flag_cam3
-    global box_width, box_height
-    x = eval(EB3_X.get())
-    y = eval(EB3_Y.get())
-    exception_box_cam3.append([x, y])
-    EB3_X.delete(0, END)
-    EB3_Y.delete(0, END)
-    #Start_Rivet_flag_cam3 = 0
-    #Rivet_center3.remove([x, y])
-    list_delete_item = []
-    for i in range(len(exception_box_cam3)):
-        for j in range(len(Rivet_center3)):
-            if ((exception_box_cam3[i][0] - box_width) < Rivet_center3[j][0]) and (
-                    Rivet_center3[j][0] < (exception_box_cam3[i][0] + box_width)) and (
-                    (exception_box_cam3[i][1] - box_height) < Rivet_center3[j][1]) and (
-                    Rivet_center3[j][1] < (exception_box_cam3[i][1] + box_height)):
-                list_delete_item.append([Rivet_center3[j][0], Rivet_center3[j][1]])
+    global cam3_box_width, cam3_box_height
+    global cam3_box_idx, Start_except_box_cam3
+    global rivet_center_flag3, save_revet_center3
 
-    list_delete_item = list(unique_everseen(list_delete_item))
-    for i in range(len(list_delete_item)):
-        Rivet_center3.remove([list_delete_item[i][0], list_delete_item[i][1]])
+    try:
+        x = eval(EB3_X.get())
+        y = eval(EB3_Y.get())
+        cam3_box_width = eval(EB3_W.get())
+        cam3_box_height = eval(EB3_H.get())
+        exception_box_cam3.append([x, y])
+        EB3_X.delete(0, END)
+        EB3_Y.delete(0, END)
+        EB3_W.delete(0, END)
+        EB3_H.delete(0, END)
+        #Start_Rivet_flag_cam3 = 0
+        #Rivet_center3.remove([x, y])
 
-    print(Rivet_center3)
+        Start_except_box_cam3 = 1
 
-    #Rivet_num3 -= 1
+        if(rivet_center_flag3 == 0):
+            rivet_center_flag3 = 1
+            save_revet_center3 = Rivet_center3
+
+        list_delete_item = []
+        for i in range(len(exception_box_cam3)):
+            for j in range(len(Rivet_center3)):
+                if ((exception_box_cam3[i][0] - cam3_box_width) <= Rivet_center3[j][0]) and (
+                        Rivet_center3[j][0] <= (exception_box_cam3[i][0] + cam3_box_width)) and (
+                        (exception_box_cam3[i][1] - cam3_box_height) <= Rivet_center3[j][1]) and (
+                        Rivet_center3[j][1] <= (exception_box_cam3[i][1] + cam3_box_height)):
+                    list_delete_item.append([Rivet_center3[j][0], Rivet_center3[j][1]])
+                    #cam3_box_idx = i
+
+        list_delete_item = list(unique_everseen(list_delete_item))
+        cam3_box_idx = save_revet_center3.index([list_delete_item[0][0], list_delete_item[0][1]])
+
+
+        for i in range(len(list_delete_item)):
+            Rivet_center3.remove([list_delete_item[i][0], list_delete_item[i][1]])
+
+        print(Rivet_center3)
+
+        #Rivet_num3 -= 1
+    except IndexError:
+        Start_except_box_cam3 = 0
+        print(Start_except_box_cam3)
+        print("==========================================================\n"*10)
 
 def execute():
     global cam1_label, cam2_label, cam3_label, image_label, root
     global RV_SN, RV_P1, RV_P2, RV_P3, RV_P4, RV_P5
-    global EB1_X, EB1_Y, EB2_X, EB2_Y, EB3_X, EB3_Y
+    global EB1_X, EB1_Y, EB1_W, EB1_H, EB2_X, EB2_Y, EB2_W, EB2_H, EB3_X, EB3_Y, EB3_W, EB3_H
 
     root = Tk()
 
@@ -1020,7 +1109,7 @@ def execute():
     cam3_label.place(x=1280, y=10)
 
     image_label = Label(root)
-    image_label.place(x=1138, y=(1080 / 3) + 205)
+    image_label.place(x=1138, y=(1080 / 3) + 195)
 
     width, height = 640, 480
 
@@ -1046,30 +1135,21 @@ def execute():
     Label(root, text="Add \nexception area", height=12, width=13, fg="red", relief="groove", bg="#ebebeb",
           font="Helvetica 13 bold").place(x=970, y=(qr_height / 3) + 390 + (0 * 80), relx=0.01, rely=0.01)
 
-    Label(root, text="CAM1", height=2, width=15, fg="red", relief="groove", bg="#ebebeb",
-          font="Helvetica 13 bold").place(x=1160, y=(qr_height / 3) + 145 + (0 * 80), relx=0.01, rely=0.01)
-    Label(root, text="CAM2", height=2, width=15, fg="red", relief="groove", bg="#ebebeb",
-          font="Helvetica 13 bold").place(x=1420, y=(qr_height / 3) + 145 + (0 * 80), relx=0.01, rely=0.01)
-    Label(root, text="CAM3", height=2, width=15, fg="red", relief="groove", bg="#ebebeb",
-          font="Helvetica 13 bold").place(x=1680, y=(qr_height / 3) + 145 + (0 * 80), relx=0.01, rely=0.01)
+    CAM_name_list = ["CAM1", "CAM2", "CAM3"]
+    for i in range(3):
+        Label(root, text=CAM_name_list[i], height=2, width=15, fg="red", relief="groove", bg="#ebebeb",
+              font="Helvetica 13 bold").place(x=1160 + (i*260), y=(qr_height / 3) + 140 + (0 * 80), relx=0.01, rely=0.01)
 
-    Label(root, text="X", height=4, width=5, fg="red", relief="groove", bg="#ebebeb",
-          font="Helvetica 13 bold").place(x=1120, y=(qr_height / 3) + 403 + (0 * 80), relx=0.01, rely=0.01)
-    Label(root, text="Y", height=4, width=5, fg="red", relief="groove", bg="#ebebeb",
-          font="Helvetica 13 bold").place(x=1120, y=(qr_height / 3) + 483 + (0 * 80), relx=0.01, rely=0.01)
-
-    Label(root, text="X", height=4, width=5, fg="red", relief="groove", bg="#ebebeb",
-          font="Helvetica 13 bold").place(x=1380, y=(qr_height / 3) + 403 + (0 * 80), relx=0.01, rely=0.01)
-    Label(root, text="Y", height=4, width=5, fg="red", relief="groove", bg="#ebebeb",
-          font="Helvetica 13 bold").place(x=1380, y=(qr_height / 3) + 483 + (0 * 80), relx=0.01, rely=0.01)
-
-    Label(root, text="X", height=4, width=5, fg="red", relief="groove", bg="#ebebeb",
-          font="Helvetica 13 bold").place(x=1640, y=(qr_height / 3) + 403 + (0 * 80), relx=0.01, rely=0.01)
-    Label(root, text="Y", height=4, width=5, fg="red", relief="groove", bg="#ebebeb",
-          font="Helvetica 13 bold").place(x=1640, y=(qr_height / 3) + 483 + (0 * 80), relx=0.01, rely=0.01)
-
-    #Label(root, text="Suction \nSticker \nDetect Info", height=25, width=11, fg="red", relief="groove", bg="#ebebeb",
-    #      font="Helvetica 13 bold").place(x=946, y=(qr_height / 3) + 140 + (0 * 80), relx=0.01, rely=0.01)
+    excpet_item_list = ["X", "Y", "W", "H"]
+    for i in range(4):
+        Label(root, text=excpet_item_list[i], height=4, width=5, fg="red", relief="groove", bg="#ebebeb",
+              font="Helvetica 8 bold").place(x=1120, y=(qr_height / 3) + 393 + (i*61) + (0 * 80), relx=0.01, rely=0.01)
+    for i in range(4):
+        Label(root, text=excpet_item_list[i], height=4, width=5, fg="red", relief="groove", bg="#ebebeb",
+              font="Helvetica 8 bold").place(x=1380, y=(qr_height / 3) + 393 + (i*61) + (0 * 80), relx=0.01, rely=0.01)
+    for i in range(4):
+        Label(root, text=excpet_item_list[i], height=4, width=5, fg="red", relief="groove", bg="#ebebeb",
+              font="Helvetica 8 bold").place(x=1640, y=(qr_height / 3) + 393 + (i*61) + (0 * 80), relx=0.01, rely=0.01)
 
     RV_SN = Entry(root, width=19, relief="groove", font="Helvetica 50 bold")
     RV_SN.place(x=218, y=(qr_height / 3) + 140 + (0 * 80), relx=0.01, rely=0.01)
@@ -1090,30 +1170,51 @@ def execute():
     RV_P5.place(x=218, y=(qr_height / 3) + 140 + (5 * 80), relx=0.01, rely=0.01)
 
     ###예외 지역 설정 엔트리
-    EB1_X = Entry(root, width=5, relief="groove", font="Helvetica 50 bold")
-    EB1_X.place(x=1180, y=(qr_height / 3) + 403 + (0 * 80), relx=0.01, rely=0.01)
+    ##CAM1
+    EB1_X = Entry(root, width=5, relief="groove", font="Helvetica 35 bold")
+    EB1_X.place(x=1160, y=(qr_height / 3) + 393 + (0 * 80), relx=0.01, rely=0.01)
 
-    EB1_Y = Entry(root, width=5, relief="groove", font="Helvetica 50 bold")
-    EB1_Y.place(x=1180, y=(qr_height / 3) + 483 + (0 * 80), relx=0.01, rely=0.01)
+    EB1_Y = Entry(root, width=5, relief="groove", font="Helvetica 35 bold")
+    EB1_Y.place(x=1160, y=(qr_height / 3) + 454 + (0 * 80), relx=0.01, rely=0.01)
 
-    EB2_X = Entry(root, width=5, relief="groove", font="Helvetica 50 bold")
-    EB2_X.place(x=1440, y=(qr_height / 3) + 403 + (0 * 80), relx=0.01, rely=0.01)
+    EB1_W = Entry(root, width=5, relief="groove", font="Helvetica 35 bold")
+    EB1_W.place(x=1160, y=(qr_height / 3) + 515 + (0 * 80), relx=0.01, rely=0.01)
 
-    EB2_Y = Entry(root, width=5, relief="groove", font="Helvetica 50 bold")
-    EB2_Y.place(x=1440, y=(qr_height / 3) + 483 + (0 * 80), relx=0.01, rely=0.01)
+    EB1_H = Entry(root, width=5, relief="groove", font="Helvetica 35 bold")
+    EB1_H.place(x=1160, y=(qr_height / 3) + 576 + (0 * 80), relx=0.01, rely=0.01)
 
-    EB3_X = Entry(root, width=5, relief="groove", font="Helvetica 50 bold")
-    EB3_X.place(x=1700, y=(qr_height / 3) + 403 + (0 * 80), relx=0.01, rely=0.01)
+    ##CAM2
+    EB2_X = Entry(root, width=5, relief="groove", font="Helvetica 35 bold")
+    EB2_X.place(x=1420, y=(qr_height / 3) + 393 + (0 * 80), relx=0.01, rely=0.01)
 
-    EB3_Y = Entry(root, width=5, relief="groove", font="Helvetica 50 bold")
-    EB3_Y.place(x=1700, y=(qr_height / 3) + 483 + (0 * 80), relx=0.01, rely=0.01)
+    EB2_Y = Entry(root, width=5, relief="groove", font="Helvetica 35 bold")
+    EB2_Y.place(x=1420, y=(qr_height / 3) + 454 + (0 * 80), relx=0.01, rely=0.01)
+
+    EB2_W = Entry(root, width=5, relief="groove", font="Helvetica 35 bold")
+    EB2_W.place(x=1420, y=(qr_height / 3) + 515 + (0 * 80), relx=0.01, rely=0.01)
+
+    EB2_H = Entry(root, width=5, relief="groove", font="Helvetica 35 bold")
+    EB2_H.place(x=1420, y=(qr_height / 3) + 576 + (0 * 80), relx=0.01, rely=0.01)
+
+    ##CAM3
+    EB3_X = Entry(root, width=5, relief="groove", font="Helvetica 35 bold")
+    EB3_X.place(x=1680, y=(qr_height / 3) + 393 + (0 * 80), relx=0.01, rely=0.01)
+
+    EB3_Y = Entry(root, width=5, relief="groove", font="Helvetica 35 bold")
+    EB3_Y.place(x=1680, y=(qr_height / 3) + 454 + (0 * 80), relx=0.01, rely=0.01)
+
+    EB3_W = Entry(root, width=5, relief="groove", font="Helvetica 35 bold")
+    EB3_W.place(x=1680, y=(qr_height / 3) + 515 + (0 * 80), relx=0.01, rely=0.01)
+
+    EB3_H = Entry(root, width=5, relief="groove", font="Helvetica 35 bold")
+    EB3_H.place(x=1680, y=(qr_height / 3) + 576 + (0 * 80), relx=0.01, rely=0.01)
 
 
     text_list = ["CAM1 Add", "CAM2 Add", "CAM3 Add"]
     command_list = [add_exception_area_cam1, add_exception_area_cam2, add_exception_area_cam3]
     for i in range(3):
         Button(root, text=text_list[i], font="돋움체", relief="raised", overrelief="solid", bg="#ebebeb", \
-               width=30, height=2, bd=3, padx=2, pady=2, command=command_list[i]).place(x=1137 + (i*262), y=943)
+               width=8, height=14, bd=3, padx=2, pady=2, command=command_list[i]).place(x=1318 + (i*262), y=764)
 
     read_frame()
     root.mainloop()
