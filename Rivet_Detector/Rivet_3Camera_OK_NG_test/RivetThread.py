@@ -4,9 +4,6 @@ import numpy as np
 import cv2
 import time
 
-# 시리얼 번호를 여기서 쓰면, 모든 쓰레드로 시리얼 번호가 날라감.
-serialnum = 99994444
-
 # 3개의 카메라를 멀티스레드로 동시에 실행
 def camera1():
     RivetDetect.execute(0)
