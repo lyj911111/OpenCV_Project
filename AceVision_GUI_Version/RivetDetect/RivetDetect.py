@@ -350,7 +350,7 @@ def read_frame():
             Serial_No = ''
             check_PLC_sensor = 0
             RV_SN.delete(0,END)
-
+        '''
         print("============   Exception Box   ==================")
         print("exception_box_cam1", exception_box_cam1)
         print("exception_box_cam2", exception_box_cam2)
@@ -360,7 +360,7 @@ def read_frame():
         print("Rivet_center1", Rivet_center1)
         print("Rivet_center2", Rivet_center2)
         print("Rivet_center3", Rivet_center3)
-
+        '''
     root.after(10, read_frame)
 
 
@@ -435,14 +435,19 @@ def RivetDetect_cam1(frame):
     # final_mask = cv2.bitwise_and(final_mask, L_)
     # final_mask = cv2.bitwise_and(final_mask, S_)
 
-    ############# 편집 중 ############################################### **********************
     final_mask = cv2.dilate(final_mask, kernel, iterations=1)
+
+    # final_mask = cv2.morphologyEx(final_mask, cv2.MORPH_OPEN, kernel)
+    # final_mask = cv2.morphologyEx(final_mask, cv2.MORPH_CLOSE, kernel)
+    # final_mask = cv2.blur(final_mask, (4, 4))
+
     final_mask = cv2.erode(final_mask, kernel, iterations=1)
     final_mask = cv2.erode(final_mask, kernel, iterations=1)
     final_mask1 = cv2.erode(final_mask, kernel, iterations=1)
 
-
     result = cv2.bitwise_and(frame2, frame2, mask=final_mask1)
+
+    cv2.imshow("finalmask1", final_mask1)
 
     #################### 리벳 중심좌표값 자동 저장용 ##########################
 
@@ -507,7 +512,7 @@ def RivetDetect_cam1(frame):
             Rivet_tuple_cam1.append(tuple(Rivet_center1[i]))  # 자동 저장된 리벳 좌표값을 튜플로 변환후 리스트에 저장. -> (Circle 마크에 쓰기 위해)
 
         #cv2.imshow('init_location' + str(num) +'.jpg', frame)  # 이미지 확인용.
-        cv2.imwrite('init_location' + str(num) + '.jpg', frame)  # 처음 이미지 캡쳐후 저장.
+        #cv2.imwrite('init_location' + str(num) + '.jpg', frame)  # 처음 이미지 캡쳐후 저장.
         ##############################
 
         Start_Rivet_flag_cam1 = 1
@@ -531,7 +536,7 @@ def RivetDetect_cam1(frame):
         if Rivet_num1 != 0:
             for i in range(Rivet_num1):
                 pixel_val1 = reverse[Rivet_center1[i][1], Rivet_center1[i][0]]  # 픽셀값 저장 (0, 255)
-                if pixel_val1 == 255:  # 검출된곳은 1, 검출되지 않을곳은 0으로 변환.
+                if pixel_val1 == 0:  # 검출된곳은 1, 검출되지 않을곳은 0으로 변환.
                     pixel_val1 = 0
                     frame = cv2.circle(frame, Rivet_tuple_cam1[i], 3, (0, 0, 255), -1)
                     if Rivet_center1[i][0]>= 550:
@@ -645,13 +650,19 @@ def RivetDetect_cam2(frame):
     # final_mask = cv2.bitwise_and(final_mask, L_)
     # final_mask = cv2.bitwise_and(final_mask, S_)
 
-    ############# 편집 중 ############################################### **********************
     final_mask = cv2.dilate(final_mask, kernel, iterations=1)
+
+    # final_mask = cv2.morphologyEx(final_mask, cv2.MORPH_OPEN, kernel)
+    # final_mask = cv2.morphologyEx(final_mask, cv2.MORPH_CLOSE, kernel)
+    # final_mask = cv2.blur(final_mask, (4, 4))
+
     final_mask = cv2.erode(final_mask, kernel, iterations=1)
     final_mask = cv2.erode(final_mask, kernel, iterations=1)
     final_mask2 = cv2.erode(final_mask, kernel, iterations=1)
 
     result = cv2.bitwise_and(frame2, frame2, mask=final_mask2)
+
+    cv2.imshow("finalmask2", final_mask2)
 
     #################### 리벳 중심좌표값 자동 저장용 ##########################
 
@@ -716,7 +727,7 @@ def RivetDetect_cam2(frame):
             Rivet_tuple_cam2.append(tuple(Rivet_center2[i]))  # 자동 저장된 리벳 좌표값을 튜플로 변환후 리스트에 저장. -> (Circle 마크에 쓰기 위해)
 
         #cv2.imshow('init_location' + str(num) +'.jpg', frame)  # 이미지 확인용.
-        cv2.imwrite('init_location' + str(num) + '.jpg', frame)  # 처음 이미지 캡쳐후 저장.
+        #cv2.imwrite('init_location' + str(num) + '.jpg', frame)  # 처음 이미지 캡쳐후 저장.
         ##############################
 
         Start_Rivet_flag_cam2 = 1
@@ -740,7 +751,7 @@ def RivetDetect_cam2(frame):
         if Rivet_num2 != 0:
             for i in range(Rivet_num2):
                 pixel_val2 = reverse[Rivet_center2[i][1], Rivet_center2[i][0]]  # 픽셀값 저장 (0, 255)
-                if pixel_val2 == 255:  # 검출된곳은 1, 검출되지 않을곳은 0으로 변환.
+                if pixel_val2 == 0:  # 검출된곳은 1, 검출되지 않을곳은 0으로 변환.
                     pixel_val2 = 0
                     frame = cv2.circle(frame, Rivet_tuple_cam2[i], 3, (0, 0, 255), -1)
                     if Rivet_center2[i][0]>= 550:
@@ -858,8 +869,12 @@ def RivetDetect_cam3(frame):
     # final_mask = cv2.bitwise_and(final_mask, L_)
     # final_mask = cv2.bitwise_and(final_mask, S_)
 
-    ############# 편집 중 ############################################### **********************
     final_mask = cv2.dilate(final_mask, kernel, iterations=1)
+
+    # final_mask = cv2.morphologyEx(final_mask, cv2.MORPH_OPEN, kernel)
+    # final_mask = cv2.morphologyEx(final_mask, cv2.MORPH_CLOSE, kernel)
+    # final_mask = cv2.blur(final_mask, (4, 4))
+
     final_mask = cv2.erode(final_mask, kernel, iterations=1)
     final_mask = cv2.erode(final_mask, kernel, iterations=1)
     final_mask3 = cv2.erode(final_mask, kernel, iterations=1)
@@ -929,7 +944,7 @@ def RivetDetect_cam3(frame):
             Rivet_tuple_cam3.append(tuple(Rivet_center3[i]))  # 자동 저장된 리벳 좌표값을 튜플로 변환후 리스트에 저장. -> (Circle 마크에 쓰기 위해)
 
         #cv2.imshow('init_location' + str(num) +'.jpg', frame)  # 이미지 확인용.
-        cv2.imwrite('init_location' + str(num) + '.jpg', frame)  # 처음 이미지 캡쳐후 저장.
+        #cv2.imwrite('init_location' + str(num) + '.jpg', frame)  # 처음 이미지 캡쳐후 저장.
         ##############################
 
         Start_Rivet_flag_cam3 = 1
@@ -953,7 +968,7 @@ def RivetDetect_cam3(frame):
         if Rivet_num3 != 0:
             for i in range(Rivet_num3):
                 pixel_val3 = reverse[Rivet_center3[i][1], Rivet_center3[i][0]]  # 픽셀값 저장 (0, 255)
-                if pixel_val3 == 255:  # 검출된곳은 1, 검출되지 않을곳은 0으로 변환.
+                if pixel_val3 == 0:  # 검출된곳은 1, 검출되지 않을곳은 0으로 변환.
                     pixel_val3 = 0
                     frame = cv2.circle(frame, Rivet_tuple_cam3[i], 3, (0, 0, 255), -1)  # 원본에도 색상이 있는 점 표시.
                     if Rivet_center3[i][0]>= 550:
