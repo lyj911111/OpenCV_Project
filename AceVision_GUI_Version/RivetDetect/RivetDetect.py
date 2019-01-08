@@ -14,21 +14,21 @@ import os
 from tkinter import *
 
 width, height = 640, 480
-cap1 = cv2.VideoCapture(0)
+cap1 = cv2.VideoCapture(3)
 cap1.set(cv2.CAP_PROP_FRAME_WIDTH, width)
 cap1.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
-cap2 = cv2.VideoCapture(1)
+cap2 = cv2.VideoCapture(2)
 cap2.set(cv2.CAP_PROP_FRAME_WIDTH, width)
 cap2.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
-cap3 = cv2.VideoCapture(2)
+cap3 = cv2.VideoCapture(1)
 cap3.set(cv2.CAP_PROP_FRAME_WIDTH, width)
 cap3.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
-cap4 = cv2.VideoCapture(3)
+cap4 = cv2.VideoCapture(0)
 cap4.set(cv2.CAP_PROP_FRAME_WIDTH, width)
 cap4.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
 
 # 데이터를 저장할 위치(서버저장)
-store_location = "D:/workspace/vision/AceVision/"
+store_location = "C:\Data_Record/"
 
 font = cv2.FONT_HERSHEY_COMPLEX  # normal size sans-serif font
 fontScale = 5
@@ -389,28 +389,29 @@ def RivetDetect_cam1(frame):
 
     frame_hls = cv2.cvtColor(frame, cv2.COLOR_BGR2HLS)  # BGR -> HLS로
     H, L, S = cv2.split(frame_hls)  # H,L,S 분리
+    kernel = np.ones((3, 3), np.uint8)
 
-    _, gray1 = cv2.threshold(gray_frame, 150, 255, cv2.THRESH_BINARY_INV)
-    _, blue1 = cv2.threshold(blue, 93, 255, cv2.THRESH_BINARY_INV)
-    _, green1 = cv2.threshold(green, 99, 255, cv2.THRESH_BINARY_INV)
-    _, red1 = cv2.threshold(red, 25, 255, cv2.THRESH_BINARY_INV)
-    _, h1 = cv2.threshold(h, 165, 255, cv2.THRESH_BINARY_INV)
-    _, s1 = cv2.threshold(s, 230, 255, cv2.THRESH_BINARY_INV)
-    _, v1 = cv2.threshold(v, 120, 255, cv2.THRESH_BINARY_INV)
-    _, H1 = cv2.threshold(H, 165, 255, cv2.THRESH_BINARY_INV)
-    _, L1 = cv2.threshold(L, 110, 255, cv2.THRESH_BINARY_INV)
-    _, S1 = cv2.threshold(S, 170, 255, cv2.THRESH_BINARY_INV)
+    _, gray1 = cv2.threshold(gray_frame, 225, 255, cv2.THRESH_BINARY_INV)
+    _, blue1 = cv2.threshold(blue, 255, 255, cv2.THRESH_BINARY_INV)
+    _, green1 = cv2.threshold(green, 255, 255, cv2.THRESH_BINARY_INV)
+    _, red1 = cv2.threshold(red, 255, 255, cv2.THRESH_BINARY_INV)
+    _, h1 = cv2.threshold(h, 255, 255, cv2.THRESH_BINARY_INV)
+    _, s1 = cv2.threshold(s, 255, 255, cv2.THRESH_BINARY_INV)
+    _, v1 = cv2.threshold(v, 255, 255, cv2.THRESH_BINARY_INV)
+    _, H1 = cv2.threshold(H, 255, 255, cv2.THRESH_BINARY_INV)
+    _, L1 = cv2.threshold(L, 255, 255, cv2.THRESH_BINARY_INV)
+    _, S1 = cv2.threshold(S, 255, 255, cv2.THRESH_BINARY_INV)
 
     _, gray_ = cv2.threshold(gray_frame, 0, 255, cv2.THRESH_BINARY)
     _, blue_ = cv2.threshold(blue, 0, 255, cv2.THRESH_BINARY)
-    _, green_ = cv2.threshold(green, 10, 255, cv2.THRESH_BINARY)
-    _, red_ = cv2.threshold(red, 0, 255, cv2.THRESH_BINARY)
-    _, h_ = cv2.threshold(h, 5, 255, cv2.THRESH_BINARY)
-    _, s_ = cv2.threshold(s, 10, 255, cv2.THRESH_BINARY)
-    _, v_ = cv2.threshold(v, 0, 255, cv2.THRESH_BINARY)
-    _, H_ = cv2.threshold(H, 40, 255, cv2.THRESH_BINARY)
-    _, L_ = cv2.threshold(L, 95, 255, cv2.THRESH_BINARY)
-    _, S_ = cv2.threshold(S, 65, 255, cv2.THRESH_BINARY)
+    _, green_ = cv2.threshold(green, 5, 255, cv2.THRESH_BINARY)
+    _, red_ = cv2.threshold(red, 5, 255, cv2.THRESH_BINARY)
+    _, h_ = cv2.threshold(h, 0, 255, cv2.THRESH_BINARY)
+    _, s_ = cv2.threshold(s, 0, 255, cv2.THRESH_BINARY)
+    _, v_ = cv2.threshold(v, 10, 255, cv2.THRESH_BINARY)
+    _, H_ = cv2.threshold(H, 0, 255, cv2.THRESH_BINARY)
+    _, L_ = cv2.threshold(L, 0, 255, cv2.THRESH_BINARY)
+    _, S_ = cv2.threshold(S, 0, 255, cv2.THRESH_BINARY)
 
     final_mask = gray1
     final_mask = cv2.bitwise_and(final_mask, blue1)
@@ -429,10 +430,18 @@ def RivetDetect_cam1(frame):
     final_mask = cv2.bitwise_and(final_mask, red_)
     # final_mask = cv2.bitwise_and(final_mask, h_)
     # final_mask = cv2.bitwise_and(final_mask, s_)
-    final_mask1 = cv2.bitwise_and(final_mask, v_)
+    final_mask = cv2.bitwise_and(final_mask, v_)
     # final_mask = cv2.bitwise_and(final_mask, H_)
     # final_mask = cv2.bitwise_and(final_mask, L_)
     # final_mask = cv2.bitwise_and(final_mask, S_)
+
+    ############# 편집 중 ############################################### **********************
+    final_mask = cv2.dilate(final_mask, kernel, iterations=1)
+    final_mask = cv2.erode(final_mask, kernel, iterations=1)
+    final_mask = cv2.erode(final_mask, kernel, iterations=1)
+    final_mask1 = cv2.erode(final_mask, kernel, iterations=1)
+
+
     result = cv2.bitwise_and(frame2, frame2, mask=final_mask1)
 
     #################### 리벳 중심좌표값 자동 저장용 ##########################
@@ -471,7 +480,7 @@ def RivetDetect_cam1(frame):
             _, contours, _ = cv2.findContours(final_mask1, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)  # 컨투어 찾기
             if len(contours) != 0:
                 for contour in contours:
-                    if (cv2.contourArea(contour) > 800) and (cv2.contourArea(contour) < 4500):  # **필요한 면적을 찾아 중심점 좌표를 저장
+                    if (cv2.contourArea(contour) > 30) and (cv2.contourArea(contour) < 500):  # **필요한 면적을 찾아 중심점 좌표를 저장
                         ball_area = cv2.contourArea(contour)
                         mom = contour
                         M = cv2.moments(mom)
@@ -590,25 +599,26 @@ def RivetDetect_cam2(frame):
 
     frame_hls = cv2.cvtColor(frame, cv2.COLOR_BGR2HLS)  # BGR -> HLS로
     H, L, S = cv2.split(frame_hls)  # H,L,S 분리
+    kernel = np.ones((3, 3), np.uint8)
 
-    _, gray1 = cv2.threshold(gray_frame, 229, 255, cv2.THRESH_BINARY_INV)
-    _, blue1 = cv2.threshold(blue, 218, 255, cv2.THRESH_BINARY_INV)
-    _, green1 = cv2.threshold(green, 218, 255, cv2.THRESH_BINARY_INV)
-    _, red1 = cv2.threshold(red, 222, 255, cv2.THRESH_BINARY_INV)
+    _, gray1 = cv2.threshold(gray_frame, 225, 255, cv2.THRESH_BINARY_INV)
+    _, blue1 = cv2.threshold(blue, 255, 255, cv2.THRESH_BINARY_INV)
+    _, green1 = cv2.threshold(green, 255, 255, cv2.THRESH_BINARY_INV)
+    _, red1 = cv2.threshold(red, 255, 255, cv2.THRESH_BINARY_INV)
     _, h1 = cv2.threshold(h, 255, 255, cv2.THRESH_BINARY_INV)
     _, s1 = cv2.threshold(s, 255, 255, cv2.THRESH_BINARY_INV)
-    _, v1 = cv2.threshold(v, 239, 255, cv2.THRESH_BINARY_INV)
+    _, v1 = cv2.threshold(v, 255, 255, cv2.THRESH_BINARY_INV)
     _, H1 = cv2.threshold(H, 255, 255, cv2.THRESH_BINARY_INV)
-    _, L1 = cv2.threshold(L, 213, 255, cv2.THRESH_BINARY_INV)
+    _, L1 = cv2.threshold(L, 255, 255, cv2.THRESH_BINARY_INV)
     _, S1 = cv2.threshold(S, 255, 255, cv2.THRESH_BINARY_INV)
 
     _, gray_ = cv2.threshold(gray_frame, 0, 255, cv2.THRESH_BINARY)
     _, blue_ = cv2.threshold(blue, 0, 255, cv2.THRESH_BINARY)
-    _, green_ = cv2.threshold(green, 10, 255, cv2.THRESH_BINARY)
-    _, red_ = cv2.threshold(red, 0, 255, cv2.THRESH_BINARY)
+    _, green_ = cv2.threshold(green, 5, 255, cv2.THRESH_BINARY)
+    _, red_ = cv2.threshold(red, 5, 255, cv2.THRESH_BINARY)
     _, h_ = cv2.threshold(h, 0, 255, cv2.THRESH_BINARY)
     _, s_ = cv2.threshold(s, 0, 255, cv2.THRESH_BINARY)
-    _, v_ = cv2.threshold(v, 0, 255, cv2.THRESH_BINARY)
+    _, v_ = cv2.threshold(v, 10, 255, cv2.THRESH_BINARY)
     _, H_ = cv2.threshold(H, 0, 255, cv2.THRESH_BINARY)
     _, L_ = cv2.threshold(L, 0, 255, cv2.THRESH_BINARY)
     _, S_ = cv2.threshold(S, 0, 255, cv2.THRESH_BINARY)
@@ -630,10 +640,17 @@ def RivetDetect_cam2(frame):
     final_mask = cv2.bitwise_and(final_mask, red_)
     # final_mask = cv2.bitwise_and(final_mask, h_)
     # final_mask = cv2.bitwise_and(final_mask, s_)
-    final_mask2 = cv2.bitwise_and(final_mask, v_)
+    final_mask = cv2.bitwise_and(final_mask, v_)
     # final_mask = cv2.bitwise_and(final_mask, H_)
     # final_mask = cv2.bitwise_and(final_mask, L_)
     # final_mask = cv2.bitwise_and(final_mask, S_)
+
+    ############# 편집 중 ############################################### **********************
+    final_mask = cv2.dilate(final_mask, kernel, iterations=1)
+    final_mask = cv2.erode(final_mask, kernel, iterations=1)
+    final_mask = cv2.erode(final_mask, kernel, iterations=1)
+    final_mask2 = cv2.erode(final_mask, kernel, iterations=1)
+
     result = cv2.bitwise_and(frame2, frame2, mask=final_mask2)
 
     #################### 리벳 중심좌표값 자동 저장용 ##########################
@@ -671,7 +688,7 @@ def RivetDetect_cam2(frame):
             _, contours, _ = cv2.findContours(final_mask2, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)  # 컨투어 찾기
             if len(contours) != 0:
                 for contour in contours:
-                    if (cv2.contourArea(contour) > 800) and (cv2.contourArea(contour) < 4500):  # **필요한 면적을 찾아 중심점 좌표를 저장
+                    if (cv2.contourArea(contour) > 30) and (cv2.contourArea(contour) < 500):  # **필요한 면적을 찾아 중심점 좌표를 저장
                         ball_area = cv2.contourArea(contour)
                         mom = contour
                         M = cv2.moments(mom)
@@ -795,28 +812,29 @@ def RivetDetect_cam3(frame):
 
     frame_hls = cv2.cvtColor(frame, cv2.COLOR_BGR2HLS)  # BGR -> HLS로
     H, L, S = cv2.split(frame_hls)  # H,L,S 분리
+    kernel = np.ones((3, 3), np.uint8)
 
-    _, gray1 = cv2.threshold(gray_frame, 150, 255, cv2.THRESH_BINARY_INV)
-    _, blue1 = cv2.threshold(blue, 93, 255, cv2.THRESH_BINARY_INV)
-    _, green1 = cv2.threshold(green, 99, 255, cv2.THRESH_BINARY_INV)
-    _, red1 = cv2.threshold(red, 25, 255, cv2.THRESH_BINARY_INV)
-    _, h1 = cv2.threshold(h, 165, 255, cv2.THRESH_BINARY_INV)
-    _, s1 = cv2.threshold(s, 230, 255, cv2.THRESH_BINARY_INV)
-    _, v1 = cv2.threshold(v, 120, 255, cv2.THRESH_BINARY_INV)
-    _, H1 = cv2.threshold(H, 165, 255, cv2.THRESH_BINARY_INV)
-    _, L1 = cv2.threshold(L, 110, 255, cv2.THRESH_BINARY_INV)
-    _, S1 = cv2.threshold(S, 170, 255, cv2.THRESH_BINARY_INV)
+    _, gray1 = cv2.threshold(gray_frame, 225, 255, cv2.THRESH_BINARY_INV)
+    _, blue1 = cv2.threshold(blue, 255, 255, cv2.THRESH_BINARY_INV)
+    _, green1 = cv2.threshold(green, 255, 255, cv2.THRESH_BINARY_INV)
+    _, red1 = cv2.threshold(red, 255, 255, cv2.THRESH_BINARY_INV)
+    _, h1 = cv2.threshold(h, 255, 255, cv2.THRESH_BINARY_INV)
+    _, s1 = cv2.threshold(s, 255, 255, cv2.THRESH_BINARY_INV)
+    _, v1 = cv2.threshold(v, 255, 255, cv2.THRESH_BINARY_INV)
+    _, H1 = cv2.threshold(H, 255, 255, cv2.THRESH_BINARY_INV)
+    _, L1 = cv2.threshold(L, 255, 255, cv2.THRESH_BINARY_INV)
+    _, S1 = cv2.threshold(S, 255, 255, cv2.THRESH_BINARY_INV)
 
     _, gray_ = cv2.threshold(gray_frame, 0, 255, cv2.THRESH_BINARY)
     _, blue_ = cv2.threshold(blue, 0, 255, cv2.THRESH_BINARY)
-    _, green_ = cv2.threshold(green, 10, 255, cv2.THRESH_BINARY)
-    _, red_ = cv2.threshold(red, 0, 255, cv2.THRESH_BINARY)
-    _, h_ = cv2.threshold(h, 5, 255, cv2.THRESH_BINARY)
-    _, s_ = cv2.threshold(s, 10, 255, cv2.THRESH_BINARY)
-    _, v_ = cv2.threshold(v, 0, 255, cv2.THRESH_BINARY)
-    _, H_ = cv2.threshold(H, 40, 255, cv2.THRESH_BINARY)
-    _, L_ = cv2.threshold(L, 95, 255, cv2.THRESH_BINARY)
-    _, S_ = cv2.threshold(S, 65, 255, cv2.THRESH_BINARY)
+    _, green_ = cv2.threshold(green, 5, 255, cv2.THRESH_BINARY)
+    _, red_ = cv2.threshold(red, 5, 255, cv2.THRESH_BINARY)
+    _, h_ = cv2.threshold(h, 0, 255, cv2.THRESH_BINARY)
+    _, s_ = cv2.threshold(s, 0, 255, cv2.THRESH_BINARY)
+    _, v_ = cv2.threshold(v, 10, 255, cv2.THRESH_BINARY)
+    _, H_ = cv2.threshold(H, 0, 255, cv2.THRESH_BINARY)
+    _, L_ = cv2.threshold(L, 0, 255, cv2.THRESH_BINARY)
+    _, S_ = cv2.threshold(S, 0, 255, cv2.THRESH_BINARY)
 
     final_mask = gray1
     final_mask = cv2.bitwise_and(final_mask, blue1)
@@ -835,10 +853,17 @@ def RivetDetect_cam3(frame):
     final_mask = cv2.bitwise_and(final_mask, red_)
     # final_mask = cv2.bitwise_and(final_mask, h_)
     # final_mask = cv2.bitwise_and(final_mask, s_)
-    final_mask3 = cv2.bitwise_and(final_mask, v_)
+    final_mask = cv2.bitwise_and(final_mask, v_)
     # final_mask = cv2.bitwise_and(final_mask, H_)
     # final_mask = cv2.bitwise_and(final_mask, L_)
     # final_mask = cv2.bitwise_and(final_mask, S_)
+
+    ############# 편집 중 ############################################### **********************
+    final_mask = cv2.dilate(final_mask, kernel, iterations=1)
+    final_mask = cv2.erode(final_mask, kernel, iterations=1)
+    final_mask = cv2.erode(final_mask, kernel, iterations=1)
+    final_mask3 = cv2.erode(final_mask, kernel, iterations=1)
+
     result = cv2.bitwise_and(frame2, frame2, mask=final_mask3)
 
     #################### 리벳 중심좌표값 자동 저장용 ##########################
@@ -876,7 +901,7 @@ def RivetDetect_cam3(frame):
             _, contours, _ = cv2.findContours(final_mask3, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)  # 컨투어 찾기
             if len(contours) != 0:
                 for contour in contours:
-                    if (cv2.contourArea(contour) > 800) and (cv2.contourArea(contour) < 4500):  # **필요한 면적을 찾아 중심점 좌표를 저장
+                    if (cv2.contourArea(contour) > 30) and (cv2.contourArea(contour) < 500):  # **필요한 면적을 찾아 중심점 좌표를 저장
                         ball_area = cv2.contourArea(contour)
                         mom = contour
                         M = cv2.moments(mom)
@@ -1170,8 +1195,9 @@ def setting_window():
     global EB1_X, EB1_Y, EB1_W, EB1_H, EB2_X, EB2_Y, EB2_W, EB2_H, EB3_X, EB3_Y, EB3_W, EB3_H
     ### 설정창
 
+    # 설정창 세팅
     set = Toplevel(root)
-    set.geometry("800x600")
+    set.geometry("850x600")
     set.title("Setting Window")
     set.configure(bg="#ebebeb")
     qr_width, qr_height = 1920, 1080
@@ -1186,7 +1212,7 @@ def setting_window():
            bd=3, padx=2, pady=2, command=check_setting).pack(side=BOTTOM, fill=X)
 
     Button(set, text="리벳 감지 \n시작버튼", font="돋움체", relief="raised", overrelief="solid", bg="#ebebeb", \
-           width=15, height=5, bd=3, padx=2, pady=2, command=start_detect).place(x=660, y=390)
+           width=15, height=3, bd=3, padx=2, pady=2, command=start_detect).place(x=660, y=390)
 
     CAM_name_list = ["CAM1", "CAM2", "CAM3"]
     for i in range(3):
@@ -1249,7 +1275,7 @@ def setting_window():
     command_list = [add_exception_area_cam1, add_exception_area_cam2, add_exception_area_cam3]
     for i in range(3):
         Button(set, text=text_list[i], font="돋움체", relief="raised", overrelief="solid", bg="#ebebeb", \
-               width=8, height=14, bd=3, padx=2, pady=2, command=command_list[i]).place(x=190 + (i * 262), y=140)
+               width=9, height=9, bd=3, padx=2, pady=2, command=command_list[i]).place(x=190 + (i * 262), y=140)   # 세팅창 버튼 설정
 
 
 def execute():
