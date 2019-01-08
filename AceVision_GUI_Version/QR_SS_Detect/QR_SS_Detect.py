@@ -28,7 +28,7 @@ cap2.set(cv2.CAP_PROP_FRAME_WIDTH, width)
 cap2.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
 
 # 데이터를 저장할 위치(서버저장)
-store_location = "D:/workspace/vision/AceVision/"
+store_location = "C:/Data_Record_QR/"
 
 #전역 변수
 check_year = 0
@@ -188,8 +188,8 @@ def leave_log(check_function):
 
 def Reformat_Image(image):
     height, width = image.shape[:2]
-    width = int(width*3/2)
-    height = int(height*3/2)
+    width = int(width*1.2)
+    height = int(height*1.2)
     res = cv2.resize(image, (width, height), interpolation=cv2.INTER_AREA)
 
     return res
@@ -357,7 +357,7 @@ def QRDetect(frame):
             print(qr_cx, qr_cy)
             #roi = frame4[(qr_cx-56)-100+191-20:(qr_cx+56)-100+191+20, (qr_cy-66)-100-20:(qr_cy+66)-100+10]
             #roi = frame4[(qr_cx +15):(qr_cx + 167),(qr_cy - 186):(qr_cy -24)]
-            roi = frame4[(qr_cx + 0):(qr_cx + 175), (qr_cy - 190):(qr_cy - 15)]
+            roi = frame4[(qr_cx + 0):(qr_cx + 190), (qr_cy - 190):(qr_cy - 15)]
             #roi = cv2.copyMakeBorder(roi,3,3,3,3,cv2.BORDER_CONSTANT,value=[255,255,255])
             qr_image = Reformat_Image(roi)
 
@@ -546,7 +546,7 @@ def SSDetect(frame):
     img_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
     ################# 템플릿 경로 설정 ########################
-    template = cv2.imread('D:/workspace/vision/AceVision/image/template.png', 0)
+    template = cv2.imread('C:/Data_Record_QR/template.jpg', 0)
     ##########################################################
 
     w, h = template.shape[::-1]
@@ -632,7 +632,7 @@ def SSDetect(frame):
         print("len : ", len(SS_SN.get()), len(QR_SN.get()))
         if str(Serial_No) != '':
             print("str 시리얼 테스트")
-        if abs(ss_cx - cx_ref) <= 1 and (35000 <= Area and Area <= 75000) and str(Serial_No) != '' and (qr_check_process == 1 and ss_check_process == 0) and ss_check_result == 2:
+        if abs(ss_cx - cx_ref) <= 1 and str(Serial_No) != '' and (qr_check_process == 1 and ss_check_process == 0) and ss_check_result == 2:
             # if abs(cx - cx_ref) <= 1 and (10000 <= Area and Area <= 18000):
             print("=====  판독 중  =====")
             ss_check_process = 1
