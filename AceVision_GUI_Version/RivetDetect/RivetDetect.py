@@ -46,6 +46,7 @@ OK = 0
 NG = 0
 PLC_sensor = False
 check_set = True
+check_detect = True
 check_PLC_sensor = 0
 
 check_year = 0
@@ -372,7 +373,7 @@ def RivetDetect_cam1(frame):
     global exception_box_cam1, final_mask1
     global box_width, box_height, cam1_box_idx, cam1_rect_list, Start_except_box_cam1
     global cam1_except_list, cam1_box_width, cam1_box_height, cam1_box_list
-    global PLC_sensor, check_cam1_judge, folder_name
+    global PLC_sensor, check_cam1_judge, folder_name, check_detect
 
     # col,row,_ = frame.shape # frame 화면크기 출력, (y ,x) = (480x640)
     # print(col,row)
@@ -453,113 +454,115 @@ def RivetDetect_cam1(frame):
         print(exception_box_cam1)
         print(cam1_box_list)
 
-    for i in range(len(cam1_rect_list)):
-        frame = cv2.rectangle(frame, (cam1_box_list[i][0] - int((cam1_except_list[i][0]) / 2),
-                                      cam1_box_list[i][1] - int((cam1_except_list[i][1]) / 2)), \
-                              (cam1_box_list[i][0] + int((cam1_except_list[i][0]) / 2),
-                               cam1_box_list[i][1] + int((cam1_except_list[i][1]) / 2)), (0, 255, 0), 1)
+    if check_detect == False:
+        for i in range(len(cam1_rect_list)):
+            frame = cv2.rectangle(frame, (cam1_box_list[i][0] - int((cam1_except_list[i][0]) / 2),
+                                          cam1_box_list[i][1] - int((cam1_except_list[i][1]) / 2)), \
+                                  (cam1_box_list[i][0] + int((cam1_except_list[i][0]) / 2),
+                                   cam1_box_list[i][1] + int((cam1_except_list[i][1]) / 2)), (0, 255, 0), 1)
 
 
-    if Start_Rivet_flag_cam1 == 0:  # 시작할때 한번만 작동 플레그.
-        #Rivet_tuple = Rivet_tuple_cam1
-        Rivet_center1 = []
-        cx_origin = 0
-        cy_origin = 0
+        if Start_Rivet_flag_cam1 == 0:  # 시작할때 한번만 작동 플레그.
+            #Rivet_tuple = Rivet_tuple_cam1
+            Rivet_center1 = []
+            cx_origin = 0
+            cy_origin = 0
 
-        _, contours, _ = cv2.findContours(final_mask1, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)  # 컨투어 찾기
-        if len(contours) != 0:
-            for contour in contours:
-                if (cv2.contourArea(contour) > 800) and (cv2.contourArea(contour) < 4500):  # **필요한 면적을 찾아 중심점 좌표를 저장
-                    ball_area = cv2.contourArea(contour)
-                    mom = contour
-                    M = cv2.moments(mom)
-                    cx_origin = int(M['m10'] / M['m00'])
-                    cy_origin = int(M['m01'] / M['m00'])
+            _, contours, _ = cv2.findContours(final_mask1, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)  # 컨투어 찾기
+            if len(contours) != 0:
+                for contour in contours:
+                    if (cv2.contourArea(contour) > 800) and (cv2.contourArea(contour) < 4500):  # **필요한 면적을 찾아 중심점 좌표를 저장
+                        ball_area = cv2.contourArea(contour)
+                        mom = contour
+                        M = cv2.moments(mom)
+                        cx_origin = int(M['m10'] / M['m00'])
+                        cy_origin = int(M['m01'] / M['m00'])
 
-                    Rivet_center1.append([cx_origin, cy_origin])  # 중심좌표 list에 추가
+                        Rivet_center1.append([cx_origin, cy_origin])  # 중심좌표 list에 추가
 
-                    # 좌표값 사각박스 내 예외 처리
+                        # 좌표값 사각박스 내 예외 처리
 
-                    for i in range(len(exception_box_cam1)):
-                        if (exception_box_cam1[i][0] < cx_origin  and cx_origin < (exception_box_cam1[i][0] + box_width)) \
-                                and (exception_box_cam1[i][1] < cy_origin and cy_origin < (exception_box_cam1[i][1] + box_height)):  # 중심좌표가 예외 처리 사각박스 안에 있나 비교
-                            Rivet_center1.pop()  # 예외처리 박스 안에 있으면, append된 마지막 리스트를 다시 빼버림.
+                        for i in range(len(exception_box_cam1)):
+                            if (exception_box_cam1[i][0] < cx_origin  and cx_origin < (exception_box_cam1[i][0] + box_width)) \
+                                    and (exception_box_cam1[i][1] < cy_origin and cy_origin < (exception_box_cam1[i][1] + box_height)):  # 중심좌표가 예외 처리 사각박스 안에 있나 비교
+                                Rivet_center1.pop()  # 예외처리 박스 안에 있으면, append된 마지막 리스트를 다시 빼버림.
 
-                    cv2.circle(frame, (cx_origin, cy_origin), 10, (0, 255, 0), -1)  # 처음에 찍힌 원래 중심 좌표 표시, 예외처리 하기 전 중심좌표들 표시
+                        cv2.circle(frame, (cx_origin, cy_origin), 10, (0, 255, 0), -1)  # 처음에 찍힌 원래 중심 좌표 표시, 예외처리 하기 전 중심좌표들 표시
 
-    ##### 자동 좌표값 저장하기 #####
-    print(str(num) + " 저장된 리벳의 좌표:", Rivet_center1)  # 자동 저장된 중심점값 출력
-    Rivet_num1 = len(Rivet_center1)  # 자동 저장된 리벳의 갯수값 저장.
+        ##### 자동 좌표값 저장하기 #####
+        print(str(num) + " 저장된 리벳의 좌표:", Rivet_center1)  # 자동 저장된 중심점값 출력
+        Rivet_num1 = len(Rivet_center1)  # 자동 저장된 리벳의 갯수값 저장.
 
-    Rivet_tuple_cam1 = []
-    for i in range(Rivet_num1):
-        Rivet_tuple_cam1.append(tuple(Rivet_center1[i]))  # 자동 저장된 리벳 좌표값을 튜플로 변환후 리스트에 저장. -> (Circle 마크에 쓰기 위해)
-
-    #cv2.imshow('init_location' + str(num) +'.jpg', frame)  # 이미지 확인용.
-    cv2.imwrite('init_location' + str(num) + '.jpg', frame)  # 처음 이미지 캡쳐후 저장.
-    ##############################
-
-    Start_Rivet_flag_cam1 = 1
-
-    #############################################################################
-
-    reverse = cv2.bitwise_not(final_mask1)
-    reverse_copy = reverse.copy()
-
-        # ** 리벳을 검출할 위치에 원으로 좌표 표시.
-    for i in range(Rivet_num1):
-        reverse_copy = cv2.circle(reverse_copy, Rivet_tuple_cam1[i], 10, (0, 0, 0), -1)  # 가운데 점 픽셀값 확인용 (x,y)값으로 받음.
-        frame = cv2.circle(frame, Rivet_tuple_cam1[i], 3, (0, 255, 255), -1)  # 원본에도 색상이 있는 점 표시.
-
-    # ** 한 픽셀당 Binary 값을 표시.
-    # [y , x]의 픽셀값 입력받음.
-    pixel_val_list = []
-
-    #print("Rivet_num1 : ",Rivet_num1)
-    # 리벳이 탐지유무에 따른 화면 출력.
-    if Rivet_num1 != 0:
+        Rivet_tuple_cam1 = []
         for i in range(Rivet_num1):
-            pixel_val1 = reverse[Rivet_center1[i][1], Rivet_center1[i][0]]  # 픽셀값 저장 (0, 255)
-            if pixel_val1 == 255:  # 검출된곳은 1, 검출되지 않을곳은 0으로 변환.
-                pixel_val1 = 0
-                frame = cv2.circle(frame, Rivet_tuple_cam1[i], 3, (0, 0, 255), -1)
-                if Rivet_center1[i][0]>= 550:
-                    cv2.putText(frame, '%d, %d' % (Rivet_center1[i][0], Rivet_center1[i][1]),(Rivet_center1[i][0]-55, Rivet_center1[i][1]-5), font, 0.4, (0, 0, 255), 1, cv2.LINE_AA)
+            Rivet_tuple_cam1.append(tuple(Rivet_center1[i]))  # 자동 저장된 리벳 좌표값을 튜플로 변환후 리스트에 저장. -> (Circle 마크에 쓰기 위해)
+
+        #cv2.imshow('init_location' + str(num) +'.jpg', frame)  # 이미지 확인용.
+        cv2.imwrite('init_location' + str(num) + '.jpg', frame)  # 처음 이미지 캡쳐후 저장.
+        ##############################
+
+        Start_Rivet_flag_cam1 = 1
+
+        #############################################################################
+
+        reverse = cv2.bitwise_not(final_mask1)
+        reverse_copy = reverse.copy()
+
+            # ** 리벳을 검출할 위치에 원으로 좌표 표시.
+        for i in range(Rivet_num1):
+            reverse_copy = cv2.circle(reverse_copy, Rivet_tuple_cam1[i], 10, (0, 0, 0), -1)  # 가운데 점 픽셀값 확인용 (x,y)값으로 받음.
+            frame = cv2.circle(frame, Rivet_tuple_cam1[i], 3, (0, 255, 255), -1)  # 원본에도 색상이 있는 점 표시.
+
+        # ** 한 픽셀당 Binary 값을 표시.
+        # [y , x]의 픽셀값 입력받음.
+        pixel_val_list = []
+
+        #print("Rivet_num1 : ",Rivet_num1)
+        # 리벳이 탐지유무에 따른 화면 출력.
+        if Rivet_num1 != 0:
+            for i in range(Rivet_num1):
+                pixel_val1 = reverse[Rivet_center1[i][1], Rivet_center1[i][0]]  # 픽셀값 저장 (0, 255)
+                if pixel_val1 == 255:  # 검출된곳은 1, 검출되지 않을곳은 0으로 변환.
+                    pixel_val1 = 0
+                    frame = cv2.circle(frame, Rivet_tuple_cam1[i], 3, (0, 0, 255), -1)
+                    if Rivet_center1[i][0]>= 550:
+                        cv2.putText(frame, '%d, %d' % (Rivet_center1[i][0], Rivet_center1[i][1]),(Rivet_center1[i][0]-55, Rivet_center1[i][1]-5), font, 0.4, (0, 0, 255), 1, cv2.LINE_AA)
+                    else:
+                        cv2.putText(frame, '%d, %d'%(Rivet_center1[i][0], Rivet_center1[i][1]), (Rivet_center1[i][0], Rivet_center1[i][1]-5), font, 0.4, (0, 0, 255), 1, cv2.LINE_AA)
                 else:
-                    cv2.putText(frame, '%d, %d'%(Rivet_center1[i][0], Rivet_center1[i][1]), (Rivet_center1[i][0], Rivet_center1[i][1]-5), font, 0.4, (0, 0, 255), 1, cv2.LINE_AA)
+                    frame = cv2.circle(frame, Rivet_tuple_cam1[i], 3, (0, 255, 0), -1)
+                    pixel_val1 = 1
+
+                pixel_val_list.append(pixel_val1)  # 변환된 값을 리스트에 추가
+                pixel_sum = sum(pixel_val_list)  # 모든 픽셀의 합
+
+            # print(pixel_val_list, pixel_sum)    # 픽셀값과 합계 출력
+        #else:
+            #cv2.putText(frame, "No data", (50, 300), font, 2, (255, 0, 0), 2, cv2.LINE_AA)
+
+
+        # stopper로 부터 아스키코드 'a' 가 들어오면 화면 캡쳐 - 데이터 저장. 로그기록.
+        if PLC_sensor == True:
+            check_cam1_judge = 1
+            frame_cam1 = frame
+            #accum = accum + 1  # 누적 판독수 축적.
+            print("===== cam1 판독중 =====")
+            if pixel_sum == Rivet_num1:
+                if Rivet_num1 == 0:
+                    cv2.putText(frame_cam1, "No Data", (500, 50), font, 1, (255, 0, 0), 2, cv2.LINE_AA)
+                else:
+                    #cv2.imwrite(store_location + "%s/rivet/pass/%s.jpg" % (folder_name, Serial_No), frame)
+                    count_pass_rivet_cam1 += 1
+                    check_rivet_pass_cam1 = 1
+                    cv2.putText(frame_cam1, "PASS", (550, 50), font, 1, (0, 255, 0), 2, cv2.LINE_AA)
             else:
-                frame = cv2.circle(frame, Rivet_tuple_cam1[i], 3, (0, 255, 0), -1)
-                pixel_val1 = 1
+                #cv2.imwrite(store_location + "%s/rivet/fail/%s.jpg" % (folder_name, Serial_No), frame)
+                count_fail_rivet_cam1 += 1
+                check_rivet_fail_cam1 = 1
+                cv2.putText(frame_cam1, "NG", (550, 50), font, 1, (0, 0, 255), 2, cv2.LINE_AA)
 
-            pixel_val_list.append(pixel_val1)  # 변환된 값을 리스트에 추가
-            pixel_sum = sum(pixel_val_list)  # 모든 픽셀의 합
+        print("accum_cam1, count_pass_rivet_cam1, count_fail_rivet_cam1", accum_cam1, count_pass_rivet_cam1, count_fail_rivet_cam1)
 
-        # print(pixel_val_list, pixel_sum)    # 픽셀값과 합계 출력
-    #else:
-        #cv2.putText(frame, "No data", (50, 300), font, 2, (255, 0, 0), 2, cv2.LINE_AA)
-
-
-    # stopper로 부터 아스키코드 'a' 가 들어오면 화면 캡쳐 - 데이터 저장. 로그기록.
-    if PLC_sensor == True:
-        check_cam1_judge = 1
-
-        #accum = accum + 1  # 누적 판독수 축적.
-        print("===== cam1 판독중 =====")
-        if pixel_sum == Rivet_num1:
-            if Rivet_num1 == 0:
-                cv2.putText(frame_cam1, "No Data", (500, 50), font, 1, (255, 0, 0), 2, cv2.LINE_AA)
-            else:
-                #cv2.imwrite(store_location + "%s/rivet/pass/%s.jpg" % (folder_name, Serial_No), frame)
-                count_pass_rivet_cam1 += 1
-                check_rivet_pass_cam1 = 1
-                cv2.putText(frame_cam1, "PASS", (550, 50), font, 1, (0, 255, 0), 2, cv2.LINE_AA)
-        else:
-            #cv2.imwrite(store_location + "%s/rivet/fail/%s.jpg" % (folder_name, Serial_No), frame)
-            count_fail_rivet_cam1 += 1
-            check_rivet_fail_cam1 = 1
-            cv2.putText(frame_cam1, "NG", (550, 50), font, 1, (0, 0, 255), 2, cv2.LINE_AA)
-
-    print("accum_cam1, count_pass_rivet_cam1, count_fail_rivet_cam1", accum_cam1, count_pass_rivet_cam1, count_fail_rivet_cam1)
     return frame
 
 def RivetDetect_cam2(frame):
@@ -571,7 +574,7 @@ def RivetDetect_cam2(frame):
     global exception_box_cam2, final_mask2
     global box_width, box_height, cam2_box_idx, cam2_rect_list, Start_except_box_cam2
     global cam2_except_list, cam2_box_width, cam2_box_height, cam2_box_list
-    global PLC_sensor, check_cam2_judge
+    global PLC_sensor, check_cam2_judge, check_detect
 
     # col,row,_ = frame.shape # frame 화면크기 출력, (y ,x) = (480x640)
     # print(col,row)
@@ -653,116 +656,118 @@ def RivetDetect_cam2(frame):
         print(exception_box_cam2)
         print(cam2_box_list)
 
-    for i in range(len(cam2_rect_list)):
-        frame = cv2.rectangle(frame, ( cam2_box_list[i][0] - int( (cam2_except_list[i][0])/2 ), cam2_box_list[i][1] - int( (cam2_except_list[i][1]) /2) ), \
-                              (cam2_box_list[i][0] + int( (cam2_except_list[i][0]) /2), cam2_box_list[i][1] + int( (cam2_except_list[i][1]) /2)), (0, 255, 0), 1)
+    if check_detect == False:
+        for i in range(len(cam2_rect_list)):
+            frame = cv2.rectangle(frame, ( cam2_box_list[i][0] - int( (cam2_except_list[i][0])/2 ), cam2_box_list[i][1] - int( (cam2_except_list[i][1]) /2) ), \
+                                  (cam2_box_list[i][0] + int( (cam2_except_list[i][0]) /2), cam2_box_list[i][1] + int( (cam2_except_list[i][1]) /2)), (0, 255, 0), 1)
 
 
-    if Start_Rivet_flag_cam2 == 0:  # 시작할때 한번만 작동 플레그.
-        #Rivet_tuple = Rivet_tuple_cam2
-        Rivet_center2 = []
-        cx_origin = 0
-        cy_origin = 0
+        if Start_Rivet_flag_cam2 == 0:  # 시작할때 한번만 작동 플레그.
+            #Rivet_tuple = Rivet_tuple_cam2
+            Rivet_center2 = []
+            cx_origin = 0
+            cy_origin = 0
 
-        _, contours, _ = cv2.findContours(final_mask2, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)  # 컨투어 찾기
-        if len(contours) != 0:
-            for contour in contours:
-                if (cv2.contourArea(contour) > 800) and (cv2.contourArea(contour) < 4500):  # **필요한 면적을 찾아 중심점 좌표를 저장
-                    ball_area = cv2.contourArea(contour)
-                    mom = contour
-                    M = cv2.moments(mom)
-                    cx_origin = int(M['m10'] / M['m00'])
-                    cy_origin = int(M['m01'] / M['m00'])
+            _, contours, _ = cv2.findContours(final_mask2, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)  # 컨투어 찾기
+            if len(contours) != 0:
+                for contour in contours:
+                    if (cv2.contourArea(contour) > 800) and (cv2.contourArea(contour) < 4500):  # **필요한 면적을 찾아 중심점 좌표를 저장
+                        ball_area = cv2.contourArea(contour)
+                        mom = contour
+                        M = cv2.moments(mom)
+                        cx_origin = int(M['m10'] / M['m00'])
+                        cy_origin = int(M['m01'] / M['m00'])
 
-                    Rivet_center2.append([cx_origin, cy_origin])  # 중심좌표 list에 추가
+                        Rivet_center2.append([cx_origin, cy_origin])  # 중심좌표 list에 추가
 
-                    # 좌표값 사각박스 내 예외 처리
+                        # 좌표값 사각박스 내 예외 처리
 
-                    for i in range(len(exception_box_cam2)):
-                        if (cx_origin > exception_box_cam2[i][0] and cx_origin < (exception_box_cam2[i][0] + box_width)) and (
-                                cy_origin > exception_box_cam2[i][1] and cy_origin < (
-                                exception_box_cam2[i][1] + box_height)):  # 중심좌표가 예외 처리 사각박스 안에 있나 비교
-                            Rivet_center2.pop()  # 예외처리 박스 안에 있으면, append된 마지막 리스트를 다시 빼버림.
+                        for i in range(len(exception_box_cam2)):
+                            if (cx_origin > exception_box_cam2[i][0] and cx_origin < (exception_box_cam2[i][0] + box_width)) and (
+                                    cy_origin > exception_box_cam2[i][1] and cy_origin < (
+                                    exception_box_cam2[i][1] + box_height)):  # 중심좌표가 예외 처리 사각박스 안에 있나 비교
+                                Rivet_center2.pop()  # 예외처리 박스 안에 있으면, append된 마지막 리스트를 다시 빼버림.
 
-                    cv2.circle(frame, (cx_origin, cy_origin), 10, (0, 255, 0), -1)  # 처음에 찍힌 원래 중심 좌표 표시, 예외처리 하기 전 중심좌표들 표시
+                        cv2.circle(frame, (cx_origin, cy_origin), 10, (0, 255, 0), -1)  # 처음에 찍힌 원래 중심 좌표 표시, 예외처리 하기 전 중심좌표들 표시
 
-    ##### 자동 좌표값 저장하기 #####
-    print(str(num) + " 저장된 리벳의 좌표:", Rivet_center2)  # 자동 저장된 중심점값 출력
-    Rivet_num2 = len(Rivet_center2)  # 자동 저장된 리벳의 갯수값 저장.
+        ##### 자동 좌표값 저장하기 #####
+        print(str(num) + " 저장된 리벳의 좌표:", Rivet_center2)  # 자동 저장된 중심점값 출력
+        Rivet_num2 = len(Rivet_center2)  # 자동 저장된 리벳의 갯수값 저장.
 
-    Rivet_tuple_cam2 = []
-    for i in range(Rivet_num2):
-        Rivet_tuple_cam2.append(tuple(Rivet_center2[i]))  # 자동 저장된 리벳 좌표값을 튜플로 변환후 리스트에 저장. -> (Circle 마크에 쓰기 위해)
-
-    #cv2.imshow('init_location' + str(num) +'.jpg', frame)  # 이미지 확인용.
-    cv2.imwrite('init_location' + str(num) + '.jpg', frame)  # 처음 이미지 캡쳐후 저장.
-    ##############################
-
-    Start_Rivet_flag_cam2 = 1
-
-    #############################################################################
-
-    reverse = cv2.bitwise_not(final_mask2)
-    reverse_copy = reverse.copy()
-
-        # ** 리벳을 검출할 위치에 원으로 좌표 표시.
-    for i in range(Rivet_num2):
-        reverse_copy = cv2.circle(reverse_copy, Rivet_tuple_cam2[i], 10, (0, 0, 0), -1)  # 가운데 점 픽셀값 확인용 (x,y)값으로 받음.
-        frame = cv2.circle(frame, Rivet_tuple_cam2[i], 3, (0, 255, 255), -1)  # 원본에도 색상이 있는 점 표시.
-
-    # ** 한 픽셀당 Binary 값을 표시.
-    # [y , x]의 픽셀값 입력받음.
-    pixel_val_list = []
-
-    #print("Rivet_num2 : ",Rivet_num2)
-    # 리벳이 탐지유무에 따른 화면 출력.
-    if Rivet_num2 != 0:
+        Rivet_tuple_cam2 = []
         for i in range(Rivet_num2):
-            pixel_val2 = reverse[Rivet_center2[i][1], Rivet_center2[i][0]]  # 픽셀값 저장 (0, 255)
-            if pixel_val2 == 255:  # 검출된곳은 1, 검출되지 않을곳은 0으로 변환.
-                pixel_val2 = 0
-                frame = cv2.circle(frame, Rivet_tuple_cam2[i], 3, (0, 0, 255), -1)
-                if Rivet_center2[i][0]>= 550:
-                    cv2.putText(frame, '%d, %d' % (Rivet_center2[i][0], Rivet_center2[i][1]),(Rivet_center2[i][0]-55, Rivet_center2[i][1]-5), font, 0.4, (0, 0, 255), 1, cv2.LINE_AA)
+            Rivet_tuple_cam2.append(tuple(Rivet_center2[i]))  # 자동 저장된 리벳 좌표값을 튜플로 변환후 리스트에 저장. -> (Circle 마크에 쓰기 위해)
+
+        #cv2.imshow('init_location' + str(num) +'.jpg', frame)  # 이미지 확인용.
+        cv2.imwrite('init_location' + str(num) + '.jpg', frame)  # 처음 이미지 캡쳐후 저장.
+        ##############################
+
+        Start_Rivet_flag_cam2 = 1
+
+        #############################################################################
+
+        reverse = cv2.bitwise_not(final_mask2)
+        reverse_copy = reverse.copy()
+
+            # ** 리벳을 검출할 위치에 원으로 좌표 표시.
+        for i in range(Rivet_num2):
+            reverse_copy = cv2.circle(reverse_copy, Rivet_tuple_cam2[i], 10, (0, 0, 0), -1)  # 가운데 점 픽셀값 확인용 (x,y)값으로 받음.
+            frame = cv2.circle(frame, Rivet_tuple_cam2[i], 3, (0, 255, 255), -1)  # 원본에도 색상이 있는 점 표시.
+
+        # ** 한 픽셀당 Binary 값을 표시.
+        # [y , x]의 픽셀값 입력받음.
+        pixel_val_list = []
+
+        #print("Rivet_num2 : ",Rivet_num2)
+        # 리벳이 탐지유무에 따른 화면 출력.
+        if Rivet_num2 != 0:
+            for i in range(Rivet_num2):
+                pixel_val2 = reverse[Rivet_center2[i][1], Rivet_center2[i][0]]  # 픽셀값 저장 (0, 255)
+                if pixel_val2 == 255:  # 검출된곳은 1, 검출되지 않을곳은 0으로 변환.
+                    pixel_val2 = 0
+                    frame = cv2.circle(frame, Rivet_tuple_cam2[i], 3, (0, 0, 255), -1)
+                    if Rivet_center2[i][0]>= 550:
+                        cv2.putText(frame, '%d, %d' % (Rivet_center2[i][0], Rivet_center2[i][1]),(Rivet_center2[i][0]-55, Rivet_center2[i][1]-5), font, 0.4, (0, 0, 255), 1, cv2.LINE_AA)
+                    else:
+                        cv2.putText(frame, '%d, %d'%(Rivet_center2[i][0], Rivet_center2[i][1]), (Rivet_center2[i][0], Rivet_center2[i][1]-5), font, 0.4, (0, 0, 255), 1, cv2.LINE_AA)
                 else:
-                    cv2.putText(frame, '%d, %d'%(Rivet_center2[i][0], Rivet_center2[i][1]), (Rivet_center2[i][0], Rivet_center2[i][1]-5), font, 0.4, (0, 0, 255), 1, cv2.LINE_AA)
+                    frame = cv2.circle(frame, Rivet_tuple_cam2[i], 3, (0, 255, 0), -1)
+                    pixel_val2 = 1
+
+                pixel_val_list.append(pixel_val2)  # 변환된 값을 리스트에 추가
+                pixel_sum = sum(pixel_val_list)  # 모든 픽셀의 합
+
+            # print(pixel_val_list, pixel_sum)    # 픽셀값과 합계 출력
+        #else:
+        #    cv2.putText(frame, "No data", (50, 300), font, 2, (255, 0, 0), 2, cv2.LINE_AA)
+
+
+        # stopper로 부터 아스키코드 'a' 가 들어오면 화면 캡쳐 - 데이터 저장. 로그기록.
+        if PLC_sensor == True:
+            check_cam2_judge = 1
+
+            #accum = accum + 1  # 누적 판독수 축적.
+
+            frame_cam2 = frame
+            print("===== cam2 판독중 =====")
+            if pixel_sum == Rivet_num2:
+                if Rivet_num2 == 0:
+                    cv2.putText(frame_cam2, "No Data", (500, 50), font, 1, (255, 0, 0), 2, cv2.LINE_AA)
+                else:
+                #cv2.imwrite(store_location + "%s/rivet/pass/%s.jpg" % (folder_name, Serial_No), frame)
+                    count_pass_rivet_cam2 += 1
+                    check_rivet_pass_cam2 = 1
+                    cv2.putText(frame_cam2, "PASS", (550, 50), font, 1, (0, 255, 0), 2, cv2.LINE_AA)
             else:
-                frame = cv2.circle(frame, Rivet_tuple_cam2[i], 3, (0, 255, 0), -1)
-                pixel_val2 = 1
+                #cv2.imwrite(store_location + "%s/rivet/fail/%s.jpg" % (folder_name, Serial_No), frame)
+                count_fail_rivet_cam2 += 1
+                check_rivet_fail_cam2 = 1
+                cv2.putText(frame_cam2, "NG", (550, 50), font, 1, (0, 0, 255), 2, cv2.LINE_AA)
 
-            pixel_val_list.append(pixel_val2)  # 변환된 값을 리스트에 추가
-            pixel_sum = sum(pixel_val_list)  # 모든 픽셀의 합
+            accum_cam2 = count_pass_rivet_cam2 + count_fail_rivet_cam2
+            #leave_log(num)  # 판독값을 로그로 남김.
 
-        # print(pixel_val_list, pixel_sum)    # 픽셀값과 합계 출력
-    #else:
-    #    cv2.putText(frame, "No data", (50, 300), font, 2, (255, 0, 0), 2, cv2.LINE_AA)
-
-
-    # stopper로 부터 아스키코드 'a' 가 들어오면 화면 캡쳐 - 데이터 저장. 로그기록.
-    if PLC_sensor == True:
-        check_cam2_judge = 1
-
-        #accum = accum + 1  # 누적 판독수 축적.
-
-        print("===== cam2 판독중 =====")
-        if pixel_sum == Rivet_num2:
-            if Rivet_num2 == 0:
-                cv2.putText(frame_cam2, "No Data", (500, 50), font, 1, (255, 0, 0), 2, cv2.LINE_AA)
-            else:
-            #cv2.imwrite(store_location + "%s/rivet/pass/%s.jpg" % (folder_name, Serial_No), frame)
-                count_pass_rivet_cam2 += 1
-                check_rivet_pass_cam2 = 1
-                cv2.putText(frame_cam2, "PASS", (550, 50), font, 1, (0, 255, 0), 2, cv2.LINE_AA)
-        else:
-            #cv2.imwrite(store_location + "%s/rivet/fail/%s.jpg" % (folder_name, Serial_No), frame)
-            count_fail_rivet_cam2 += 1
-            check_rivet_fail_cam2 = 1
-            cv2.putText(frame_cam2, "NG", (550, 50), font, 1, (0, 0, 255), 2, cv2.LINE_AA)
-
-        accum_cam2 = count_pass_rivet_cam2 + count_fail_rivet_cam2
-        #leave_log(num)  # 판독값을 로그로 남김.
-
-    print("accum_cam2, count_pass_rivet_cam2, count_fail_rivet_cam2", accum_cam2, count_pass_rivet_cam2, count_fail_rivet_cam2)
+        print("accum_cam2, count_pass_rivet_cam2, count_fail_rivet_cam2", accum_cam2, count_pass_rivet_cam2, count_fail_rivet_cam2)
     return frame
 
 def RivetDetect_cam3(frame):
@@ -774,7 +779,7 @@ def RivetDetect_cam3(frame):
     global exception_box_cam3, final_mask3
     global box_width, box_height, cam3_box_idx, cam3_rect_list, Start_except_box_cam3
     global cam3_except_list, cam3_box_width, cam3_box_height, cam3_box_list
-    global PLC_sensor, check_cam3_judge
+    global PLC_sensor, check_cam3_judge, check_detect
 
     # col,row,_ = frame.shape # frame 화면크기 출력, (y ,x) = (480x640)
     # print(col,row)
@@ -855,105 +860,107 @@ def RivetDetect_cam3(frame):
         print(exception_box_cam3)
         print(cam3_box_list)
 
-    for i in range(len(cam3_rect_list)):
-        frame = cv2.rectangle(frame, ( cam3_box_list[i][0] - int( (cam3_except_list[i][0])/2 ), cam3_box_list[i][1] - int( (cam3_except_list[i][1]) /2) ), \
-                              (cam3_box_list[i][0] + int( (cam3_except_list[i][0]) /2), cam3_box_list[i][1] + int( (cam3_except_list[i][1]) /2)), (0, 255, 0), 1)
+    if check_detect == False:
+        for i in range(len(cam3_rect_list)):
+            frame = cv2.rectangle(frame, ( cam3_box_list[i][0] - int( (cam3_except_list[i][0])/2 ), cam3_box_list[i][1] - int( (cam3_except_list[i][1]) /2) ), \
+                                  (cam3_box_list[i][0] + int( (cam3_except_list[i][0]) /2), cam3_box_list[i][1] + int( (cam3_except_list[i][1]) /2)), (0, 255, 0), 1)
 
 
-    if Start_Rivet_flag_cam3 == 0:  # 시작할때 한번만 작동 플레그.
-        #Rivet_tuple = Rivet_tuple_cam3
+        if Start_Rivet_flag_cam3 == 0:  # 시작할때 한번만 작동 플레그.
+            #Rivet_tuple = Rivet_tuple_cam3
 
-        Rivet_center3 = []
-        cx_origin = 0
-        cy_origin = 0
+            Rivet_center3 = []
+            cx_origin = 0
+            cy_origin = 0
 
-        _, contours, _ = cv2.findContours(final_mask3, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)  # 컨투어 찾기
-        if len(contours) != 0:
-            for contour in contours:
-                if (cv2.contourArea(contour) > 800) and (cv2.contourArea(contour) < 4500):  # **필요한 면적을 찾아 중심점 좌표를 저장
-                    ball_area = cv2.contourArea(contour)
-                    mom = contour
-                    M = cv2.moments(mom)
-                    cx_origin = int(M['m10'] / M['m00'])
-                    cy_origin = int(M['m01'] / M['m00'])
+            _, contours, _ = cv2.findContours(final_mask3, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)  # 컨투어 찾기
+            if len(contours) != 0:
+                for contour in contours:
+                    if (cv2.contourArea(contour) > 800) and (cv2.contourArea(contour) < 4500):  # **필요한 면적을 찾아 중심점 좌표를 저장
+                        ball_area = cv2.contourArea(contour)
+                        mom = contour
+                        M = cv2.moments(mom)
+                        cx_origin = int(M['m10'] / M['m00'])
+                        cy_origin = int(M['m01'] / M['m00'])
 
-                    Rivet_center3.append([cx_origin, cy_origin])  # 중심좌표 list에 추가
+                        Rivet_center3.append([cx_origin, cy_origin])  # 중심좌표 list에 추가
 
-                    # 좌표값 사각박스 내 예외 처리
+                        # 좌표값 사각박스 내 예외 처리
 
-                    for i in range(len(exception_box_cam3)):
-                        if (cx_origin > exception_box_cam3[i][0] and cx_origin < (exception_box_cam3[i][0] + box_width)) and (
-                                cy_origin > exception_box_cam3[i][1] and cy_origin < (
-                                exception_box_cam3[i][1] + box_height)):  # 중심좌표가 예외 처리 사각박스 안에 있나 비교
-                            Rivet_center3.pop()  # 예외처리 박스 안에 있으면, append된 마지막 리스트를 다시 빼버림.
+                        for i in range(len(exception_box_cam3)):
+                            if (cx_origin > exception_box_cam3[i][0] and cx_origin < (exception_box_cam3[i][0] + box_width)) and (
+                                    cy_origin > exception_box_cam3[i][1] and cy_origin < (
+                                    exception_box_cam3[i][1] + box_height)):  # 중심좌표가 예외 처리 사각박스 안에 있나 비교
+                                Rivet_center3.pop()  # 예외처리 박스 안에 있으면, append된 마지막 리스트를 다시 빼버림.
 
-                    cv2.circle(frame, (cx_origin, cy_origin), 10, (0, 255, 0), -1)  # 처음에 찍힌 원래 중심 좌표 표시, 예외처리 하기 전 중심좌표들 표시
+                        cv2.circle(frame, (cx_origin, cy_origin), 10, (0, 255, 0), -1)  # 처음에 찍힌 원래 중심 좌표 표시, 예외처리 하기 전 중심좌표들 표시
 
-    ##### 자동 좌표값 저장하기 #####
-    print(str(num) + " 저장된 리벳의 좌표:", Rivet_center3)  # 자동 저장된 중심점값 출력
-    Rivet_num3 = len(Rivet_center3)  # 자동 저장된 리벳의 갯수값 저장.
+        ##### 자동 좌표값 저장하기 #####
+        print(str(num) + " 저장된 리벳의 좌표:", Rivet_center3)  # 자동 저장된 중심점값 출력
+        Rivet_num3 = len(Rivet_center3)  # 자동 저장된 리벳의 갯수값 저장.
 
-    Rivet_tuple_cam3 = []
-    for i in range(Rivet_num3):
-        Rivet_tuple_cam3.append(tuple(Rivet_center3[i]))  # 자동 저장된 리벳 좌표값을 튜플로 변환후 리스트에 저장. -> (Circle 마크에 쓰기 위해)
-
-    #cv2.imshow('init_location' + str(num) +'.jpg', frame)  # 이미지 확인용.
-    cv2.imwrite('init_location' + str(num) + '.jpg', frame)  # 처음 이미지 캡쳐후 저장.
-    ##############################
-
-    Start_Rivet_flag_cam3 = 1
-
-    #############################################################################
-
-    reverse = cv2.bitwise_not(final_mask3)
-    reverse_copy = reverse.copy()
-
-        # ** 리벳을 검출할 위치에 원으로 좌표 표시.
-    for i in range(Rivet_num3):
-        reverse_copy = cv2.circle(reverse_copy, Rivet_tuple_cam3[i], 10, (0, 0, 0), -1)  # 가운데 점 픽셀값 확인용 (x,y)값으로 받음.
-        #frame = cv2.circle(frame, Rivet_tuple_cam3[i], 3, (0, 255, 255), -1)  # 원본에도 색상이 있는 점 표시.
-
-    # ** 한 픽셀당 Binary 값을 표시.
-    # [y , x]의 픽셀값 입력받음.
-    pixel_val_list = []
-
-    #print("Rivet_num3 : ",Rivet_num1)
-    # 리벳이 탐지유무에 따른 화면 출력.
-    if Rivet_num3 != 0:
+        Rivet_tuple_cam3 = []
         for i in range(Rivet_num3):
-            pixel_val3 = reverse[Rivet_center3[i][1], Rivet_center3[i][0]]  # 픽셀값 저장 (0, 255)
-            if pixel_val3 == 255:  # 검출된곳은 1, 검출되지 않을곳은 0으로 변환.
-                pixel_val3 = 0
-                frame = cv2.circle(frame, Rivet_tuple_cam3[i], 3, (0, 0, 255), -1)  # 원본에도 색상이 있는 점 표시.
-                if Rivet_center3[i][0]>= 550:
-                    cv2.putText(frame, '%d, %d' % (Rivet_center3[i][0], Rivet_center3[i][1]),(Rivet_center3[i][0]-55, Rivet_center3[i][1]-5), font, 0.4, (0, 0, 255), 1, cv2.LINE_AA)
+            Rivet_tuple_cam3.append(tuple(Rivet_center3[i]))  # 자동 저장된 리벳 좌표값을 튜플로 변환후 리스트에 저장. -> (Circle 마크에 쓰기 위해)
+
+        #cv2.imshow('init_location' + str(num) +'.jpg', frame)  # 이미지 확인용.
+        cv2.imwrite('init_location' + str(num) + '.jpg', frame)  # 처음 이미지 캡쳐후 저장.
+        ##############################
+
+        Start_Rivet_flag_cam3 = 1
+
+        #############################################################################
+
+        reverse = cv2.bitwise_not(final_mask3)
+        reverse_copy = reverse.copy()
+
+            # ** 리벳을 검출할 위치에 원으로 좌표 표시.
+        for i in range(Rivet_num3):
+            reverse_copy = cv2.circle(reverse_copy, Rivet_tuple_cam3[i], 10, (0, 0, 0), -1)  # 가운데 점 픽셀값 확인용 (x,y)값으로 받음.
+            #frame = cv2.circle(frame, Rivet_tuple_cam3[i], 3, (0, 255, 255), -1)  # 원본에도 색상이 있는 점 표시.
+
+        # ** 한 픽셀당 Binary 값을 표시.
+        # [y , x]의 픽셀값 입력받음.
+        pixel_val_list = []
+
+        #print("Rivet_num3 : ",Rivet_num1)
+        # 리벳이 탐지유무에 따른 화면 출력.
+        if Rivet_num3 != 0:
+            for i in range(Rivet_num3):
+                pixel_val3 = reverse[Rivet_center3[i][1], Rivet_center3[i][0]]  # 픽셀값 저장 (0, 255)
+                if pixel_val3 == 255:  # 검출된곳은 1, 검출되지 않을곳은 0으로 변환.
+                    pixel_val3 = 0
+                    frame = cv2.circle(frame, Rivet_tuple_cam3[i], 3, (0, 0, 255), -1)  # 원본에도 색상이 있는 점 표시.
+                    if Rivet_center3[i][0]>= 550:
+                        cv2.putText(frame, '%d, %d' % (Rivet_center3[i][0], Rivet_center3[i][1]),(Rivet_center3[i][0]-55, Rivet_center3[i][1]-5), font, 0.4, (0, 0, 255), 1, cv2.LINE_AA)
+                    else:
+                        cv2.putText(frame, '%d, %d'%(Rivet_center3[i][0], Rivet_center3[i][1]), (Rivet_center3[i][0], Rivet_center3[i][1]-5), font, 0.4, (0, 0, 255), 1, cv2.LINE_AA)
                 else:
-                    cv2.putText(frame, '%d, %d'%(Rivet_center3[i][0], Rivet_center3[i][1]), (Rivet_center3[i][0], Rivet_center3[i][1]-5), font, 0.4, (0, 0, 255), 1, cv2.LINE_AA)
+                    frame = cv2.circle(frame, Rivet_tuple_cam3[i], 3, (0, 255, 0), -1)  # 원본에도 색상이 있는 점 표시.
+                    pixel_val3 = 1
+
+                pixel_val_list.append(pixel_val3)  # 변환된 값을 리스트에 추가
+                pixel_sum = sum(pixel_val_list)  # 모든 픽셀의 합
+
+
+
+        # PLC로 부터 신호를 받으면 판독 시작
+        if PLC_sensor == True:
+            check_cam3_judge = 1
+
+            frame_cam3 = frame
+            print("===== cam3 판독중 =====")
+            if pixel_sum == Rivet_num3:
+                if Rivet_num3 == 0:
+                    cv2.putText(frame_cam3, "No Data", (500, 50), font, 1, (255, 0, 0), 2, cv2.LINE_AA)
+                else:
+                    count_pass_rivet_cam3 += 1
+                    check_rivet_pass_cam3 = 1
+                    cv2.putText(frame_cam3, "PASS", (550, 50), font, 1, (0, 255, 0), 2, cv2.LINE_AA)
             else:
-                frame = cv2.circle(frame, Rivet_tuple_cam3[i], 3, (0, 255, 0), -1)  # 원본에도 색상이 있는 점 표시.
-                pixel_val3 = 1
-
-            pixel_val_list.append(pixel_val3)  # 변환된 값을 리스트에 추가
-            pixel_sum = sum(pixel_val_list)  # 모든 픽셀의 합
-
-
-
-    # PLC로 부터 신호를 받으면 판독 시작
-    if PLC_sensor == True:
-        check_cam3_judge = 1
-
-        print("===== cam3 판독중 =====")
-        if pixel_sum == Rivet_num3:
-            if Rivet_num3 == 0:
-                cv2.putText(frame_cam3, "No Data", (500, 50), font, 1, (255, 0, 0), 2, cv2.LINE_AA)
-            else:
-                count_pass_rivet_cam3 += 1
-                check_rivet_pass_cam3 = 1
-                cv2.putText(frame_cam3, "PASS", (550, 50), font, 1, (0, 255, 0), 2, cv2.LINE_AA)
-        else:
-            count_fail_rivet_cam3 += 1
-            check_rivet_fail_cam3 = 1
-            cv2.putText(frame_cam3, "NG", (550, 50), font, 1, (0, 0, 255), 2, cv2.LINE_AA)
+                count_fail_rivet_cam3 += 1
+                check_rivet_fail_cam3 = 1
+                cv2.putText(frame_cam3, "NG", (550, 50), font, 1, (0, 0, 255), 2, cv2.LINE_AA)
 
     return frame
 
@@ -1107,6 +1114,12 @@ def add_exception_area_cam3():
         Start_except_box_cam3 = 0
 
 
+def start_detect():
+    global check_detect
+
+    check_detect = False
+
+
 def PLC_sensor():
     global PLC_sensor, check_set
 
@@ -1114,31 +1127,135 @@ def PLC_sensor():
         PLC_sensor = True
 
 def check_setting():
-    global check_set, store_location, pathname
+    global check_set, store_location, pathname, set
 
     check_set = False
-    store_location = datapath.get()
+    store_location_input = datapath.get()
     set.destroy()
 
+    if store_location_input != '':
+        parsing = store_location_input.split('/')
+        print(parsing)
+        for i in range(len(parsing)):
+            if parsing[i] != '':
+                pathname += parsing[i] + '/'
+                print(pathname)
+            elif parsing[i] == '/':
+                break
+            if i != 0:
+                make_folder(pathname)
 
-    parsing = store_location.split('/')
-    print(parsing)
-    for i in range(len(parsing)):
-        if parsing[i] != '':
-            pathname += parsing[i] + '/'
-            print(pathname)
-        elif parsing[i] == '/':
-            break
-        if i != 0:
-            make_folder(pathname)
+        store_location = pathname
 
-    store_location = pathname
+    PLC_signal_window()
+
+
+
+def PLC_signal_window():
+    ### 가상 PLC 신호창
+
+    PLC = Toplevel(root)
+    PLC.geometry("400x300")
+    PLC.title("Setting Window")
+    PLC.configure(bg="#ebebeb")
+
+    Label(PLC, text="PLC 신호 전송", font="돋움체", bg="#ebebeb", bd=2, width=25, height=2, relief="groove",
+          anchor=CENTER).place(x=0, y=0)
+    Button(PLC, text="PLC 신호 전송", font="돋움체", relief="raised", overrelief="solid", bg="#ebebeb", \
+           width=20, height=10, bd=3, padx=2, pady=2, command=PLC_sensor).place(x=10, y=50)
+
+
+def setting_window():
+    global datapath, set
+    global EB1_X, EB1_Y, EB1_W, EB1_H, EB2_X, EB2_Y, EB2_W, EB2_H, EB3_X, EB3_Y, EB3_W, EB3_H
+    ### 설정창
+
+    set = Toplevel(root)
+    set.geometry("800x600")
+    set.title("Setting Window")
+    set.configure(bg="#ebebeb")
+    qr_width, qr_height = 1920, 1080
+
+    Label(set, text="예외지역 설정", font="돋움체", bg="#ebebeb", bd=2, width=25, height=2, relief="groove", anchor=CENTER).place(x=0, y=0)
+    Label(set, text="데이터 저장 경로 설정", font="돋움체", bg="#ebebeb", bd=2, width=25, height=2, relief="groove", anchor=CENTER).place(x=0, y=440)
+
+    datapath = Entry(set, width=35, relief="groove", font="Helvetica 35 bold")
+    datapath.place(x=0, y=490 , relx=0.001, rely=0)
+
+    Button(set, text="설정 완료", font="Helvetica 13 bold", relief="groove", overrelief="solid", bg="#ebebeb", \
+           bd=3, padx=2, pady=2, command=check_setting).pack(side=BOTTOM, fill=X)
+
+    Button(set, text="리벳 감지 \n시작버튼", font="돋움체", relief="raised", overrelief="solid", bg="#ebebeb", \
+           width=15, height=5, bd=3, padx=2, pady=2, command=start_detect).place(x=660, y=390)
+
+    CAM_name_list = ["CAM1", "CAM2", "CAM3"]
+    for i in range(3):
+        Label(set, text=CAM_name_list[i], height=2, width=15, fg="red", relief="groove", bg="#ebebeb",
+              font="Helvetica 13 bold").place(x=60 + (i * 260), y=65, relx=0.01,rely=0.01)
+
+    excpet_item_list = ["X", "Y", "W", "H"]
+    for i in range(4):
+        Label(set, text=excpet_item_list[i], height=4, width=5, fg="red", relief="groove", bg="#ebebeb",
+              font="Helvetica 8 bold").place(x=5, y=(qr_height / 8) + (i*61) , relx=0.01, rely=0.01)
+    for i in range(4):
+        Label(set, text=excpet_item_list[i], height=4, width=5, fg="red", relief="groove", bg="#ebebeb",
+              font="Helvetica 8 bold").place(x=265, y=(qr_height / 8) + (i*61) , relx=0.01, rely=0.01)
+    for i in range(4):
+        Label(set, text=excpet_item_list[i], height=4, width=5, fg="red", relief="groove", bg="#ebebeb",
+              font="Helvetica 8 bold").place(x=525, y=(qr_height / 8) + (i*61) , relx=0.01, rely=0.01)
+
+    ###예외 지역 설정 엔트리
+    ##CAM1
+    EB1_X = Entry(set, width=5, relief="groove", font="Helvetica 35 bold")
+    EB1_X.place(x=45, y=(qr_height / 8) + 0 , relx=0.01, rely=0.01)
+
+    EB1_Y = Entry(set, width=5, relief="groove", font="Helvetica 35 bold")
+    EB1_Y.place(x=45, y=(qr_height / 8) + 61 , relx=0.01, rely=0.01)
+
+    EB1_W = Entry(set, width=5, relief="groove", font="Helvetica 35 bold")
+    EB1_W.place(x=45, y=(qr_height / 8) + 122 , relx=0.01, rely=0.01)
+
+    EB1_H = Entry(set, width=5, relief="groove", font="Helvetica 35 bold")
+    EB1_H.place(x=45, y=(qr_height / 8) + 183 , relx=0.01, rely=0.01)
+
+
+    ##CAM2
+    EB2_X = Entry(set, width=5, relief="groove", font="Helvetica 35 bold")
+    EB2_X.place(x=305, y=(qr_height / 8) + 0 , relx=0.01, rely=0.01)
+
+    EB2_Y = Entry(set, width=5, relief="groove", font="Helvetica 35 bold")
+    EB2_Y.place(x=305, y=(qr_height / 8) + 61 , relx=0.01, rely=0.01)
+
+    EB2_W = Entry(set, width=5, relief="groove", font="Helvetica 35 bold")
+    EB2_W.place(x=305, y=(qr_height / 8) + 122 , relx=0.01, rely=0.01)
+
+    EB2_H = Entry(set, width=5, relief="groove", font="Helvetica 35 bold")
+    EB2_H.place(x=305, y=(qr_height / 8) + 183 , relx=0.01, rely=0.01)
+
+    ##CAM3
+    EB3_X = Entry(set, width=5, relief="groove", font="Helvetica 35 bold")
+    EB3_X.place(x=565, y=(qr_height / 8) + 0 , relx=0.01, rely=0.01)
+
+    EB3_Y = Entry(set, width=5, relief="groove", font="Helvetica 35 bold")
+    EB3_Y.place(x=565, y=(qr_height / 8) + 61 , relx=0.01, rely=0.01)
+
+    EB3_W = Entry(set, width=5, relief="groove", font="Helvetica 35 bold")
+    EB3_W.place(x=565, y=(qr_height / 8) + 122 , relx=0.01, rely=0.01)
+
+    EB3_H = Entry(set, width=5, relief="groove", font="Helvetica 35 bold")
+    EB3_H.place(x=565, y=(qr_height / 8) + 183 , relx=0.01, rely=0.01)
+
+    text_list = ["CAM1 Add", "CAM2 Add", "CAM3 Add"]
+    command_list = [add_exception_area_cam1, add_exception_area_cam2, add_exception_area_cam3]
+    for i in range(3):
+        Button(set, text=text_list[i], font="돋움체", relief="raised", overrelief="solid", bg="#ebebeb", \
+               width=8, height=14, bd=3, padx=2, pady=2, command=command_list[i]).place(x=190 + (i * 262), y=140)
 
 
 def execute():
     global cam1_label, cam2_label, cam3_label, cam4_label, image_label, root
     global RV_SN, RV_P1, RV_P2, RV_P3, RV_P4, RV_P5, set, datapath
-    global EB1_X, EB1_Y, EB1_W, EB1_H, EB2_X, EB2_Y, EB2_W, EB2_H, EB3_X, EB3_Y, EB3_W, EB3_H
+
 
     root = Tk()
 
@@ -1208,95 +1325,7 @@ def execute():
     RV_P5 = Entry(root, width=19, relief="groove", font="Helvetica 50 bold")
     RV_P5.place(x=218, y=(qr_height / 3) + 140 + (5 * 80), relx=0.01, rely=0.01)
 
-    ### 가상 PLC 신호창
-
-    PLC = Toplevel(root)
-    PLC.geometry("400x300")
-    PLC.title("Setting Window")
-    PLC.configure(bg="#ebebeb")
-
-    Label(PLC, text="PLC 신호 전송", font="돋움체", bg="#ebebeb", bd=2, width=25, height=2, relief="groove",
-          anchor=CENTER).place(x=0, y=0)
-    Button(PLC, text="PLC 신호 전송", font="돋움체", relief="raised", overrelief="solid", bg="#ebebeb", \
-           width=20, height=10, bd=3, padx=2, pady=2, command=PLC_sensor).place(x=10, y=50)
-
-    ### 설정창
-    set = Toplevel(root)
-    set.geometry("800x600")
-    set.title("Setting Window")
-    set.configure(bg="#ebebeb")
-
-    Label(set, text="예외지역 설정", font="돋움체", bg="#ebebeb", bd=2, width=25, height=2, relief="groove", anchor=CENTER).place(x=0, y=0)
-    Label(set, text="데이터 저장 경로 설정", font="돋움체", bg="#ebebeb", bd=2, width=25, height=2, relief="groove", anchor=CENTER).place(x=0, y=420)
-
-    datapath = Entry(set, width=35, relief="groove", font="Helvetica 35 bold")
-    datapath.place(x=0, y=470 , relx=0.001, rely=0)
-
-    Button(set, text="설정 완료", font="Helvetica 13 bold", relief="groove", overrelief="solid", bg="#ebebeb", \
-           bd=3, padx=2, pady=2, command=check_setting).pack(side=BOTTOM, fill=X)
-
-    CAM_name_list = ["CAM1", "CAM2", "CAM3"]
-    for i in range(3):
-        Label(set, text=CAM_name_list[i], height=2, width=15, fg="red", relief="groove", bg="#ebebeb",
-              font="Helvetica 13 bold").place(x=60 + (i * 260), y=65, relx=0.01,rely=0.01)
-
-    excpet_item_list = ["X", "Y", "W", "H"]
-    for i in range(4):
-        Label(set, text=excpet_item_list[i], height=4, width=5, fg="red", relief="groove", bg="#ebebeb",
-              font="Helvetica 8 bold").place(x=5, y=(qr_height / 8) + (i*61) , relx=0.01, rely=0.01)
-    for i in range(4):
-        Label(set, text=excpet_item_list[i], height=4, width=5, fg="red", relief="groove", bg="#ebebeb",
-              font="Helvetica 8 bold").place(x=265, y=(qr_height / 8) + (i*61) , relx=0.01, rely=0.01)
-    for i in range(4):
-        Label(set, text=excpet_item_list[i], height=4, width=5, fg="red", relief="groove", bg="#ebebeb",
-              font="Helvetica 8 bold").place(x=525, y=(qr_height / 8) + (i*61) , relx=0.01, rely=0.01)
-
-    ###예외 지역 설정 엔트리
-    ##CAM1
-    EB1_X = Entry(set, width=5, relief="groove", font="Helvetica 35 bold")
-    EB1_X.place(x=45, y=(qr_height / 8) + 0 , relx=0.01, rely=0.01)
-
-    EB1_Y = Entry(set, width=5, relief="groove", font="Helvetica 35 bold")
-    EB1_Y.place(x=45, y=(qr_height / 8) + 61 , relx=0.01, rely=0.01)
-
-    EB1_W = Entry(set, width=5, relief="groove", font="Helvetica 35 bold")
-    EB1_W.place(x=45, y=(qr_height / 8) + 122 , relx=0.01, rely=0.01)
-
-    EB1_H = Entry(set, width=5, relief="groove", font="Helvetica 35 bold")
-    EB1_H.place(x=45, y=(qr_height / 8) + 183 , relx=0.01, rely=0.01)
-
-
-    ##CAM2
-    EB2_X = Entry(set, width=5, relief="groove", font="Helvetica 35 bold")
-    EB2_X.place(x=305, y=(qr_height / 8) + 0 , relx=0.01, rely=0.01)
-
-    EB2_Y = Entry(set, width=5, relief="groove", font="Helvetica 35 bold")
-    EB2_Y.place(x=305, y=(qr_height / 8) + 61 , relx=0.01, rely=0.01)
-
-    EB2_W = Entry(set, width=5, relief="groove", font="Helvetica 35 bold")
-    EB2_W.place(x=305, y=(qr_height / 8) + 122 , relx=0.01, rely=0.01)
-
-    EB2_H = Entry(set, width=5, relief="groove", font="Helvetica 35 bold")
-    EB2_H.place(x=305, y=(qr_height / 8) + 183 , relx=0.01, rely=0.01)
-
-    ##CAM3
-    EB3_X = Entry(set, width=5, relief="groove", font="Helvetica 35 bold")
-    EB3_X.place(x=565, y=(qr_height / 8) + 0 , relx=0.01, rely=0.01)
-
-    EB3_Y = Entry(set, width=5, relief="groove", font="Helvetica 35 bold")
-    EB3_Y.place(x=565, y=(qr_height / 8) + 61 , relx=0.01, rely=0.01)
-
-    EB3_W = Entry(set, width=5, relief="groove", font="Helvetica 35 bold")
-    EB3_W.place(x=565, y=(qr_height / 8) + 122 , relx=0.01, rely=0.01)
-
-    EB3_H = Entry(set, width=5, relief="groove", font="Helvetica 35 bold")
-    EB3_H.place(x=565, y=(qr_height / 8) + 183 , relx=0.01, rely=0.01)
-
-    text_list = ["CAM1 Add", "CAM2 Add", "CAM3 Add"]
-    command_list = [add_exception_area_cam1, add_exception_area_cam2, add_exception_area_cam3]
-    for i in range(3):
-        Button(set, text=text_list[i], font="돋움체", relief="raised", overrelief="solid", bg="#ebebeb", \
-               width=8, height=14, bd=3, padx=2, pady=2, command=command_list[i]).place(x=190 + (i * 262), y=140)
+    setting_window()
 
     read_frame()
     root.mainloop()
