@@ -27,32 +27,32 @@ def execute(cam):
     cam = str(cam)                                    # 실행창 번호 할당을 위해
 
     # FIND_BLACK
-    cv2.createTrackbar("graybar", "Trackbars", 255, 255, nothing)  # 135
+    cv2.createTrackbar("graybar", "Trackbars", 225, 255, nothing)  # 135
     cv2.createTrackbar("bluebar", "Trackbars", 255, 255, nothing)  # 110
-    cv2.createTrackbar("greenbar", "Trackbars", 240, 255, nothing)  # 101
+    cv2.createTrackbar("greenbar", "Trackbars", 255, 255, nothing)  # 101
     cv2.createTrackbar("redbar", "Trackbars", 255, 255, nothing)  # 101
     cv2.createTrackbar("hsv hbar", "Trackbars", 255, 255, nothing)  # 255
     cv2.createTrackbar("hsv sbar", "Trackbars", 255, 255, nothing)  # 115
-    cv2.createTrackbar("hsv vbar", "Trackbars", 245, 255, nothing)  # 141
-    cv2.createTrackbar("hsl hbar", "Trackbars", 215, 255, nothing)  # 255
-    cv2.createTrackbar("hsl sbar", "Trackbars", 225, 255, nothing)  # 170
-    cv2.createTrackbar("hsl lbar", "Trackbars", 200, 255, nothing)  # 175
+    cv2.createTrackbar("hsv vbar", "Trackbars", 255, 255, nothing)  # 141
+    cv2.createTrackbar("hsl hbar", "Trackbars", 255, 255, nothing)  # 255
+    cv2.createTrackbar("hsl sbar", "Trackbars", 255, 255, nothing)  # 170
+    cv2.createTrackbar("hsl lbar", "Trackbars", 255, 255, nothing)  # 175
 
     # cv2.createTrackbar("graybar_", "Trackbars", 0, 255, nothing)
     cv2.createTrackbar("bluebar_", "Trackbars", 0, 255, nothing)  # 33
-    cv2.createTrackbar("greenbar_", "Trackbars", 0, 255, nothing)  # 35
-    cv2.createTrackbar("redbar_", "Trackbars", 0, 255, nothing)
+    cv2.createTrackbar("greenbar_", "Trackbars", 5, 255, nothing)  # 35
+    cv2.createTrackbar("redbar_", "Trackbars", 5, 255, nothing)
     cv2.createTrackbar("hsv hbar_", "Trackbars", 0, 255, nothing)
     cv2.createTrackbar("hsv sbar_", "Trackbars", 0, 255, nothing)
-    cv2.createTrackbar("hsv vbar_", "Trackbars", 50, 255, nothing)
+    cv2.createTrackbar("hsv vbar_", "Trackbars", 10, 255, nothing)
     cv2.createTrackbar("hsl hbar_", "Trackbars", 0, 255, nothing)
-    cv2.createTrackbar("hsl sbar_", "Trackbars", 100, 255, nothing)
-    cv2.createTrackbar("hsl lbar_", "Trackbars", 50, 255, nothing)
+    cv2.createTrackbar("hsl sbar_", "Trackbars", 0, 255, nothing)
+    cv2.createTrackbar("hsl lbar_", "Trackbars", 0, 255, nothing)
 
-    cv2.createTrackbar("k1", "Trackbars", 21, 50, nothing)
-    cv2.createTrackbar("k2", "Trackbars", 33, 50, nothing)
-    cv2.createTrackbar("itera", "Trackbars", 6, 10, nothing)
-    cv2.createTrackbar("rank", "Trackbars", 4, 10, nothing)
+    cv2.createTrackbar("k1", "Trackbars", 0, 50, nothing)
+    cv2.createTrackbar("k2", "Trackbars", 0, 50, nothing)
+    cv2.createTrackbar("itera", "Trackbars", 0, 10, nothing)
+    cv2.createTrackbar("rank", "Trackbars", 0, 10, nothing)
 
     while True:
 
@@ -145,12 +145,15 @@ def execute(cam):
         # final_mask = cv2.bitwise_and(final_mask, S_)
 
         final_mask = cv2.dilate(final_mask, kernel, iterations=1)
-        # final_mask = cv2.dilate(final_mask, kernel, iterations=1)
-        # final_mask = cv2.dilate(final_mask, kernel, iterations=1)
-        # final_mask = cv2.morphologyEx(final_mask, cv2.MORPH_OPEN, kernel)
 
+        # final_mask = cv2.morphologyEx(final_mask, cv2.MORPH_OPEN, kernel)
         # final_mask = cv2.morphologyEx(final_mask, cv2.MORPH_CLOSE, kernel)
-        final_mask = cv2.blur(final_mask, (2, 2))
+        #final_mask = cv2.blur(final_mask, (4, 4))
+
+        final_mask = cv2.erode(final_mask, kernel, iterations=1)
+        final_mask = cv2.erode(final_mask, kernel, iterations=1)
+        final_mask = cv2.erode(final_mask, kernel, iterations=1)
+
 
         result = cv2.bitwise_and(frame2, frame2, mask=final_mask)
 
@@ -180,21 +183,13 @@ def execute(cam):
                     cv2.circle(frame, (cx_origin, cy_origin), 5, (0, 255, 255), -1)  # 중심 좌표 표시
                     Rivet_center.append([cx_origin, cy_origin])
 
-        ##### 자동 좌표값 저장하기 #####
-        print(cam + " 저장된 리벳의 좌표:", Rivet_center)  # 자동 저장된 중심점값 출력
-        Rivet_num = len(Rivet_center)  # 자동 저장된 리벳의 갯수값 저장.
-
-        for i in range(Rivet_num):
-            Rivet_tuple.append(tuple(Rivet_center[i]))  # 자동 저장된 리벳 좌표값을 튜플로 변환후 리스트에 저장. -> (Circle 마크에 쓰기 위해)
-
-        reverse = cv2.bitwise_not(final_mask)
-        reverse_copy = reverse.copy()
-
         # ** 리벳을 검출할 위치에 원으로 좌표 표시.
         # for i in range(Rivet_num):
         #     reverse_copy = cv2.circle(reverse_copy, Rivet_tuple[i], 10, (0, 0, 0), -1)      # 가운데 점 픽셀값 확인용 (x,y)값으로 받음.
         #     frame = cv2.circle(frame, Rivet_tuple[i], 10, (0, 255, 255), -1)                # 원본에도 색상이 있는 점 표시.
 
+        #cv2.imshow('ero_ero' + cam, ero_ero)
+        #cv2.imshow('ero'+cam, erosion)
         cv2.imshow('Frame' + cam, frame)                      # 원본
         cv2.imshow('final_mask' + cam, final_mask)                # 필터링후
         # cv2.imshow('reverse' + cam, reverse)                  # 반전 (픽셀값을 찍어보기 위해 흑백)
@@ -207,5 +202,5 @@ def execute(cam):
 if __name__ == "__main__":
 
     #카메라 번호 선택 0~2
-    execute(1)
+    execute(2)
 
