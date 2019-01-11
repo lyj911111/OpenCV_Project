@@ -1,5 +1,7 @@
+# Python version 3.6.4
+
 import sys
-from cx_Freeze import setup, Executable
+from cx_Freeze import setup, Executable # pip install cx_Freeze 
 import os
 
 project_name = "Ace Vision"     # exe파일로 만들 이름.
