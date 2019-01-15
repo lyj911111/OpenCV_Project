@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+# python --version : 3.6.4
+# Author : Lee Won Jae & An Sun Hwan
 
 from tkinter import *
 import QR_SS_Detect   		# **중요, exe파일을 만들면 디렉터리가 같은곳에 위치하므로 from ~ import가 아니고, 그냥 import 모듈이름.  즉, main과 같은 자리에 있으므로 이렇게 해야한다!!!
