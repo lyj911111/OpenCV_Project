@@ -1,11 +1,11 @@
 # Author  : Won Jae Lee
-# Version : 3.7.1
+# python --version : 3.7.1 and 3.6.4
 
-import numpy as np                          # pip install numpy
-import cv2                                  # pip install python-opencv
-from PIL import Image as Img                # pip install PIL
-import pyzbar.pyzbar as pyzbar              # pip install pyzbar
-from more_itertools import unique_everseen  # pip install more_itertools
+import numpy as np                          # pip install numpy				(version : 1.16.0)
+import cv2                                  # pip install opencv-python		(version : 3.4.5)
+from PIL import Image as Img                # pip install pillow			(version : 5.4.1) 
+import pyzbar.pyzbar as pyzbar              # pip install pyzbar			(version : 0.1.7)
+from more_itertools import unique_everseen  # pip install more_itertools	(version : 5.0.0)
 from PIL import ImageTk
 from math import *
 import datetime

@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+# python --version 3.6.4
+# Author : Lee Won Jae , An Sun Hwan
 
 from tkinter import *
 from QR_SS_Detect import *
