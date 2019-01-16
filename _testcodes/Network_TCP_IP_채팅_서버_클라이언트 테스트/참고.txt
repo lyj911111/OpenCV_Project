@@ -1,0 +1,7 @@
+server.py를 실행시키고
+
+cmd 에서,
+현재 디렉토리에 접속후
+
+python client.py 로 실행하면 된다.
+(여러 client로 접속 가능)
