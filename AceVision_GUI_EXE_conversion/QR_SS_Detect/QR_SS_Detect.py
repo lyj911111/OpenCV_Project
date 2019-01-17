@@ -1,12 +1,13 @@
-# import the necessary packages
-# -*- coding: utf-8 -*-
-import numpy as np                          # pip install numpy
-import imutils                              # pip install imutils
-import cv2                                  # pip install python-opencv
-from more_itertools import unique_everseen  # pip install more_itertools
-from PIL import Image as Img                # pip install PIL
-#import pyzbar.pyzbar as pyzbar              # pip install pyzbar
-from pylibdmtx.pylibdmtx import decode
+#python --version : 3.6.4
+#author : An Sun Hwan
+
+import numpy as np                          # pip install numpy==1.16.0			(version : 1.16.0)
+import imutils                              # pip install imutils==0.5.2		(version : 0.5.2)
+import cv2                                  # pip install opencv-python==3.4.5 	(version : 3.4.5)
+from more_itertools import unique_everseen  # pip install more_itertools==5.0.0	(version : 5.0.0)
+from PIL import Image as Img                # pip install pillow==5.4.1			(version : 5.4.1)	
+#import pyzbar.pyzbar as pyzbar             # pip install pyzbar==0.1.7			(version : 0.1.7)
+from pylibdmtx.pylibdmtx import decode		# pip install pylibdmtx==0.1.7		(version : 0.1.7)
 from PIL import ImageTk
 from math import *
 import datetime

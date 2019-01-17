@@ -1,7 +1,7 @@
 # Python --version 3.6.4
 
 import sys
-from cx_Freeze import setup, Executable # pip install cx_Freeze  (version : 5.1.1) /  python version 3.7에서 사용 불가
+from cx_Freeze import setup, Executable # pip install cx_Freeze==5.1.1  (version : 5.1.1) /  python version 3.7에서 사용 불가
 import os
 
 project_name = "Ace Vision"     # exe파일로 만들 이름.
