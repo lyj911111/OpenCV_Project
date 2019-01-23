@@ -316,7 +316,7 @@ def read_frame():
     global HOST, PORT, PLC_rx, PLC_tx_OK, PLC_tx_NG
     global ser, sock, protocol, port_num, set
 
-    
+
     webCamShow(cap1.read(), cam1_label, 1)
     webCamShow(cap2.read(), cam2_label, 2)
     webCamShow(cap3.read(), cam3_label, 3)
@@ -376,7 +376,8 @@ def TCP_IP():
     global HOST, PORT, PLC_rx, sock
     global PLC_sensor
 
-    print("HOST:", HOST)
+    #print("HOST:", HOST)
+    PORT = int(PORT)
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect((HOST, PORT))
     receive_data = sock.recv(1024)  # 서버로 부터 오는 데이터
@@ -1254,6 +1255,7 @@ def check_setting():
     global ser, port_num, protocol
     global HOST, PORT
 
+    print("pro, port : ", protocol, port_num)
     if protocol == 1 and port_num != '':
         ser = serial.Serial(
             port=port_num,
@@ -1265,13 +1267,15 @@ def check_setting():
         )
         check_communication = True
     elif protocol == 2:
+        HOST = PLC_IP.get()
+        PORT = PLC_PORT.get()
         check_communication = True
 
     if check_protocol == True and check_communication == True:
         check_set = False
         store_location_input = datapath.get()
-        HOST = PLC_IP.get()
-        PORT = PLC_PORT.get()
+
+
         print(HOST, PORT)
         set.destroy()
 
