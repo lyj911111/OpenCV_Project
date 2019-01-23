@@ -11,7 +11,7 @@ main_script = "main.py"         # 컴파일하는 .py이름
 optimization = 0
 
 # main.py에 내가 import한 경로와 모듈 (폴더/모듈.py)
-resources = ["QR_SS_Detect/QR_SS_Detect.py", "RivetDetect/RivetDetect.py"]
+resources = ["QR_SS_Detect/QR_SS_Detect.py", "RivetDetect/RivetDetect.py", "aceantenna.ico"] # 아이콘 모양 추가.
 
 # 내부에 있는 모든 import한 모듈들... 총집합
 packages = ["numpy", "imutils", "cv2", "more_itertools","Image","decode","PIL", "math", "datetime", "time", "os", "tkinter", "pyzbar","pylibdmtx.pylibdmtx"]
@@ -35,5 +35,5 @@ setup(name=project_name,
       version=version,
       options={"build_exe": build_exe_options},
       bdist_mac=mac_options,
-      executables=[Executable(main_script, base=base, targetName=exe_name + ".exe")]
+      executables=[Executable(main_script, base=base, targetName=exe_name + ".exe", icon="aceantenna.ico")] # 아이콘 모양 추가
       )
