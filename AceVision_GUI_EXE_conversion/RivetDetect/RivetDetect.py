@@ -17,8 +17,10 @@ from tkinter import *
 import socket
 
 
-HOST = '192.168.109.172'  # server ip address
-PORT = 50007  # 서버와 같은 포트사용
+HOST = ''
+PORT = ''
+#HOST = '192.168.109.150'  # server ip address
+#PORT = 50007  # 서버와 같은 포트사용
 
 ### 프로토콜 설정 후 값 변경 ###
 PLC_rx = 'ready'
@@ -180,7 +182,6 @@ def check_rivet_result():
 
     accum = count_pass_rivet + count_fail_rivet
 
-    #print("count_pass_rivet : ", count_pass_rivet, "  count_fail_rivet: ", count_fail_rivet, "  accum : ", accum)
 
 def leave_log():
     global check_year, check_month, check_day, f
@@ -316,12 +317,11 @@ def read_frame():
     global HOST, PORT, PLC_rx, PLC_tx_OK, PLC_tx_NG
     global ser, sock, protocol, port_num, set
 
+    '''
     webCamShow(cap1.read(), cam1_label, 1)
     webCamShow(cap2.read(), cam2_label, 2)
     webCamShow(cap3.read(), cam3_label, 3)
-    #print("store_location", store_location, type(store_location))
-
-    #print("Serial_No:", Serial_No, "pre_Serial_No:", pre_Serial_No)
+    '''
 
     if check_set == False:
         if Serial_No != pre_Serial_No:
@@ -333,20 +333,6 @@ def read_frame():
                 RS_232()
             elif protocol == 2:
                 TCP_IP()
-
-            '''
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.connect((HOST, PORT))
-            receive_data = sock.recv(1024)  # 서버로 부터 오는 데이터
-            receive_data = receive_data.decode('utf-8')
-            print("서버에서 받은 메세지 : ", receive_data)  # 서버에서 받은 데이터를 출력.
-
-            receive_data = receive_data.lower()
-
-            print("최종 receive_data : ", receive_data)
-            if receive_data == PLC_rx:
-                PLC_sensor = True
-            '''
 
         if check_cam1_judge == 1 and check_cam2_judge == 1 and check_cam3_judge == 1:
             check_rivet_result()
@@ -384,8 +370,6 @@ def read_frame():
             check_PLC_sensor = 0
             RV_SN.delete(0,END)
 
-    #print("통신방식 : ", protocol)
-    #print("Com port : ", port_num)
     root.after(10, read_frame)
 
 
@@ -393,6 +377,7 @@ def TCP_IP():
     global HOST, PORT, PLC_rx, sock
     global PLC_sensor
 
+    print("HOST:", HOST)
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect((HOST, PORT))
     receive_data = sock.recv(1024)  # 서버로 부터 오는 데이터
@@ -1044,8 +1029,6 @@ def RivetDetect_cam3(frame):
                 pixel_val_list.append(pixel_val3)  # 변환된 값을 리스트에 추가
                 pixel_sum = sum(pixel_val_list)  # 모든 픽셀의 합
 
-
-
         # PLC로 부터 신호를 받으면 판독 시작
         if PLC_sensor == True and Serial_No != '':
             check_cam3_judge = 1
@@ -1270,11 +1253,11 @@ def check_setting():
     global check_set, store_location, pathname, set
     global check_protocol
     global ser, port_num, protocol
+    global HOST, PORT
 
     if protocol == 1 and port_num != '':
         ser = serial.Serial(
             port=port_num,
-            # port='COM3',
             baudrate=115200,
             parity=serial.PARITY_NONE, \
             stopbits=serial.STOPBITS_ONE, \
@@ -1288,6 +1271,9 @@ def check_setting():
     if check_protocol == True and check_communication == True:
         check_set = False
         store_location_input = datapath.get()
+        HOST = PLC_IP.get()
+        PORT = PLC_PORT.get()
+        print(HOST, PORT)
         set.destroy()
 
         if store_location_input != '':
@@ -1304,22 +1290,6 @@ def check_setting():
 
             store_location = pathname
 
-    #PLC_signal_window()
-
-'''
-def PLC_signal_window():
-    ### 가상 PLC 신호창
-
-    PLC = Toplevel(root)
-    PLC.geometry("400x300")
-    PLC.title("Setting Window")
-    PLC.configure(bg="#ebebeb")
-
-    Label(PLC, text="PLC 신호 전송", font="돋움체", bg="#ebebeb", bd=2, width=25, height=2, relief="groove",
-          anchor=CENTER).place(x=0, y=0)
-    Button(PLC, text="PLC 신호 전송", font="돋움체", relief="raised", overrelief="solid", bg="#ebebeb", \
-           width=20, height=10, bd=3, padx=2, pady=2, command=PLC_sensor).place(x=10, y=50)
-'''
 
 def affiche(com_port):
     global choices, port_num
@@ -1329,143 +1299,189 @@ def affiche(com_port):
     print(port_num)
 
 def select_RS_232():
-    global protocol, check_protocol
+    global protocol, check_protocol, set
+    global list_box, SP_label, RS_B, TI_B, RSC_B, PLC_IP_label, PLC_IP, PLC_PORT_label, PLC_PORT
+
+    RS_B.destroy()
+    TI_B.destroy()
+
+    if protocol == 2:
+        PLC_IP_label.destroy()
+        PLC_PORT_label.destroy()
+        PLC_IP.destroy()
+        PLC_PORT.destroy()
 
     protocol = 1
     check_protocol = True
 
-    Button(set, text="RS-232", font="돋움체", relief="raised", overrelief="solid", bg="#dfffbf", \
-           width=13, height=2, bd=3, padx=2, pady=2, command=select_RS_232).place(x=390, y=390)
+    screen_width = set.winfo_screenwidth()
+    screen_height = set.winfo_screenheight()
+    tk_width, tk_height = 1920, 1080
 
-    Button(set, text="TCP/IP", font="돋움체", relief="raised", overrelief="solid", bg="#ebebeb", \
-           width=13, height=2, bd=3, padx=2, pady=2, command=select_TCP_IP).place(x=390, y=440)
+    RS_B = Button(set, text="RS-232", font="Helvetica 10", relief="raised", overrelief="solid", bg="#dfffbf", \
+           width=int(screen_width*(14/tk_width)), height=int(screen_height*(2/tk_height)), bd=3, padx=2, pady=2, command=select_RS_232)
+    RS_B.place(x=screen_width*(135/tk_width), y=screen_height*(390/tk_height))
+
+    TI_B = Button(set, text="TCP/IP", font="Helvetica 10", relief="raised", overrelief="solid", bg="#ebebeb", \
+           width=int(screen_width*(14/tk_width)), height=int(screen_height*(2/tk_height)), bd=3, padx=2, pady=2, command=select_TCP_IP)
+    TI_B.place(x=screen_width*(135/tk_width), y=screen_height*(440/tk_height))
+
+    SP_label = Label(set, text="Serial Port", height=int(screen_height * (2 / tk_height)),
+                     width=int(screen_width * (12 / tk_width)), fg="red", relief="groove", bg="#ebebeb",font="Helvetica 13 bold")
+    SP_label.place(x=screen_width * (265 / tk_width), y=screen_height * (385 / tk_height), relx=0.01, rely=0.01)
+
+    choices = ['COM1', 'COM2', 'COM3', 'COM4', 'COM5', 'COM6', 'COM7', 'COM8', \
+               'COM9', 'COM10', 'COM11', 'COM12', 'COM13', 'COM14', 'COM15', 'COM16']
+    variable = StringVar(root)
+    variable.set('     COM_Port     ')
+    list_box = OptionMenu(set, variable, *choices, command=affiche)
+    list_box.place(x=screen_width * (265 / tk_width), y=screen_height * (445 / tk_height), relx=0.01, rely=0.01)
 
     print("통신방식 : RS-232 ")
 
 def select_TCP_IP():
-    global protocol, check_protocol
+    global protocol, check_protocol, set
+    global list_box, SP_label, RS_B, TI_B, RSC_B, PLC_IP_label, PLC_IP, PLC_PORT_label, PLC_PORT
+
+    TI_B.destroy()
+
+    if protocol == 1:
+        list_box.destroy()
+        SP_label.destroy()
 
     protocol = 2
     check_protocol = True
 
-    Button(set, text="RS-232", font="돋움체", relief="raised", overrelief="solid", bg="#ebebeb", \
-           width=13, height=2, bd=3, padx=2, pady=2, command=select_RS_232).place(x=390, y=390)
+    screen_width = set.winfo_screenwidth()
+    screen_height = set.winfo_screenheight()
+    tk_width, tk_height = 1920, 1080
 
-    Button(set, text="TCP/IP", font="돋움체", relief="raised", overrelief="solid", bg="#dfffbf", \
-           width=13, height=2, bd=3, padx=2, pady=2, command=select_TCP_IP).place(x=390, y=440)
+    PLC_IP_label = Label(set, text="PLC IP Address", height=int(screen_height * (2 / tk_height)),width=int(screen_width * (15 / tk_width)), fg="red", relief="groove", bg="#ebebeb", font="Helvetica 13 bold")
+    PLC_IP_label.place(x=screen_width * (265 / tk_width), y=screen_height * (385 / tk_height), relx=0.01, rely=0.01)
+
+    PLC_PORT_label = Label(set, text="PLC PORT Number", height=int(screen_height * (2 / tk_height)),width=int(screen_width * (16 / tk_width)), fg="red", relief="groove", bg="#ebebeb", font="Helvetica 13 bold")
+    PLC_PORT_label.place(x=screen_width * (610 / tk_width), y=screen_height * (385 / tk_height), relx=0.01, rely=0.01)
+
+    PLC_IP = Entry(set, width=int(screen_width * (15 / tk_width)), relief="groove", font="Helvetica 30 bold")
+    PLC_IP.place(x=screen_width * (265 / tk_width), y=screen_height * (430 / tk_height) + 0, relx=0.01, rely=0.01)
+
+    PLC_PORT = Entry(set, width=int(screen_width * (8 / tk_width)), relief="groove", font="Helvetica 30 bold")
+    PLC_PORT.place(x=screen_width * (610 / tk_width), y=screen_height * (430 / tk_height) + 0, relx=0.01, rely=0.01)
+
+    RS_B = Button(set, text="RS-232", font="Helvetica 10", relief="raised", overrelief="solid", bg="#ebebeb", \
+                  width=int(screen_width * (14 / tk_width)), height=int(screen_height * (2 / tk_height)), bd=3, padx=2,pady=2, command=select_RS_232)
+    RS_B.place(x=screen_width * (135 / tk_width), y=screen_height * (390 / tk_height))
+
+    TI_B = Button(set, text="TCP/IP", font="Helvetica 10", relief="raised", overrelief="solid", bg="#dfffbf", \
+                  width=int(screen_width * (14 / tk_width)), height=int(screen_height * (2 / tk_height)), bd=3, padx=2,pady=2, command=select_TCP_IP)
+    TI_B.place(x=screen_width * (135 / tk_width), y=screen_height * (440 / tk_height))
 
     print("통신방식 : TCP/IP")
 
 def setting_window():
     global datapath, set
     global EB1_X, EB1_Y, EB1_W, EB1_H, EB2_X, EB2_Y, EB2_W, EB2_H, EB3_X, EB3_Y, EB3_W, EB3_H
-    global choices
+    global choices, RS_B, TI_B
     ### 설정창
 
     set = Toplevel(root)
+    screen_width = set.winfo_screenwidth()
+    screen_height = set.winfo_screenheight()
+    tk_width, tk_height = 1920, 1080
+
     #set.iconbitmap("aceantenna.ico")
-    set.geometry("800x600")
+    set.geometry("{}x{}".format(int(screen_width*(800/tk_width)), int(screen_height*(700/tk_height))))
+    #set.geometry("800x600")
     set.title("Setting Window")
     set.configure(bg="#ebebeb")
-    qr_width, qr_height = 1920, 1080
 
-    Label(set, text="예외지역 설정", font="돋움체", bg="#ebebeb", bd=2, width=25, height=2, relief="groove", anchor=CENTER).place(x=0, y=0)
-    Label(set, text="데이터 저장 경로 설정", font="돋움체", bg="#ebebeb", bd=2, width=25, height=2, relief="groove", anchor=CENTER).place(x=0, y=440)
+    Label(set, text="예외지역 설정", font="Helvetica 12 bold", bg="#ebebeb", bd=2, width=int(screen_width*(25/tk_width)), height=int(screen_height*(2/tk_height)), relief="groove", anchor=CENTER).place(x=0, y=0)
+    Label(set, text="데이터 저장 경로 설정", font="Helvetica 12 bold", bg="#ebebeb", bd=2, width=int(screen_width*(25/tk_width)), height=int(screen_height*(2/tk_height)), relief="groove", anchor=CENTER).place(x=0, y=screen_height*(510/tk_height))
 
-    datapath = Entry(set, width=35, relief="groove", font="Helvetica 35 bold")
-    datapath.place(x=0, y=490 , relx=0.001, rely=0)
+    datapath = Entry(set, width=int(screen_width*(35/tk_width)), relief="groove", font="Helvetica 35 bold")
+    datapath.place(x=0, y=screen_height*(560/tk_height), relx=0.001, rely=0)
 
     Button(set, text="설정 완료", font="Helvetica 13 bold", relief="groove", overrelief="solid", bg="#ebebeb", \
            bd=3, padx=2, pady=2, command=check_setting).pack(side=BOTTOM, fill=X)
 
-    Button(set, text="리벳 감지 \n시작 버튼", font="돋움체", relief="raised", overrelief="solid", bg="#ebebeb", \
-           width=13, height=5, bd=3, padx=2, pady=2, command=start_detect).place(x=680, y=390)
-
+    Button(set, text="리벳 감지 시작 버튼", font="Helvetica 10", relief="raised", overrelief="solid", bg="#ebebeb", \
+           width=int(screen_width*(20/tk_width)), height=int(screen_height*(2/tk_height)), bd=3, padx=2, pady=2, command=start_detect).place(x=screen_width*(620/tk_width), y=screen_height*(500/tk_height))
 
     ### 통신 방식
-    Label(set, text="통신 방식", height=4, width=10, fg="red", relief="groove", bg="#ebebeb",
-          font="Helvetica 13 bold").place(x=265, y=393, relx=0.01, rely=0.01)
+    Label(set, text="통신 방식", height=int(screen_height*(4/tk_height)), width=int(screen_width*(10/tk_width)), fg="red", relief="groove", bg="#ebebeb",
+          font="Helvetica 13 bold").place(x=screen_width*(5/tk_width), y=screen_height*(393/tk_height), relx=0.01, rely=0.01)
 
-    Label(set, text="Serial Port", height=2, width=12, fg="red", relief="groove", bg="#ebebeb",
-          font="Helvetica 13 bold").place(x=525, y=385, relx=0.01, rely=0.01)
+    RS_B = Button(set, text="RS-232", font="Helvetica 10", relief="raised", overrelief="solid", bg="#ebebeb", \
+           width=int(screen_width*(14/tk_width)), height=int(screen_height*(2/tk_height)), bd=3, padx=2, pady=2, command=select_RS_232)
+    RS_B.place(x=screen_width*(135/tk_width), y=screen_height*(390/tk_height))
 
-
-    Button(set, text="RS-232", font="돋움체", relief="raised", overrelief="solid", bg="#ebebeb", \
-           width=13, height=2, bd=3, padx=2, pady=2, command=select_RS_232).place(x=390, y=390)
-
-    Button(set, text="TCP/IP", font="돋움체", relief="raised", overrelief="solid", bg="#ebebeb", \
-           width=13, height=2, bd=3, padx=2, pady=2, command=select_TCP_IP).place(x=390, y=440)
-
-    choices = ['COM1', 'COM2', 'COM3', 'COM4', 'COM5', 'COM6', 'COM7', 'COM8', \
-               'COM9', 'COM10', 'COM11', 'COM12', 'COM13', 'COM14', 'COM15', 'COM16']
-    variable = StringVar(root)
-    variable.set('     COM_Port     ')
-    list_box = OptionMenu(set, variable, *choices,  command = affiche)
-    list_box.place(x = 523, y = 445, relx=0.01, rely=0.01)
-
+    TI_B = Button(set, text="TCP/IP", font="Helvetica 10", relief="raised", overrelief="solid", bg="#ebebeb", \
+           width=int(screen_width*(14/tk_width)), height=int(screen_height*(2/tk_height)), bd=3, padx=2, pady=2, command=select_TCP_IP)
+    TI_B.place(x=screen_width*(135/tk_width), y=screen_height*(440/tk_height))
 
     CAM_name_list = ["CAM1", "CAM2", "CAM3"]
     for i in range(3):
-        Label(set, text=CAM_name_list[i], height=2, width=15, fg="red", relief="groove", bg="#ebebeb",
-              font="Helvetica 13 bold").place(x=60 + (i * 260), y=65, relx=0.01,rely=0.01)
+        Label(set, text=CAM_name_list[i], height=int(screen_height*(2/tk_height)), width=int(screen_width*(15/tk_width)), fg="red", relief="groove", bg="#ebebeb",
+              font="Helvetica 13 bold").place(x=screen_width*(60/tk_width) + (i * screen_width*(260/tk_width)), y=screen_height*(65/tk_height), relx=0.01,rely=0.01)
 
     excpet_item_list = ["X", "Y", "W", "H"]
     for i in range(4):
-        Label(set, text=excpet_item_list[i], height=4, width=5, fg="red", relief="groove", bg="#ebebeb",
-              font="Helvetica 8 bold").place(x=5, y=(qr_height / 8) + (i*61) , relx=0.01, rely=0.01)
+        Label(set, text=excpet_item_list[i], height=int(screen_height*(4/tk_height)), width=int(screen_width*(5/tk_width)), fg="red", relief="groove", bg="#ebebeb",
+              font="Helvetica 8 bold").place(x=screen_width*(5/tk_width), y=screen_height*(135/tk_height) + (i*screen_height*(61/tk_height)) , relx=0.01, rely=0.01)
     for i in range(4):
-        Label(set, text=excpet_item_list[i], height=4, width=5, fg="red", relief="groove", bg="#ebebeb",
-              font="Helvetica 8 bold").place(x=265, y=(qr_height / 8) + (i*61) , relx=0.01, rely=0.01)
+        Label(set, text=excpet_item_list[i], height=int(screen_height*(4/tk_height)), width=int(screen_width*(5/tk_width)), fg="red", relief="groove", bg="#ebebeb",
+              font="Helvetica 8 bold").place(x=screen_width*(265/tk_width), y=screen_height*(135/tk_height) + (i*screen_height*(61/tk_height)) , relx=0.01, rely=0.01)
     for i in range(4):
-        Label(set, text=excpet_item_list[i], height=4, width=5, fg="red", relief="groove", bg="#ebebeb",
-              font="Helvetica 8 bold").place(x=525, y=(qr_height / 8) + (i*61) , relx=0.01, rely=0.01)
+        Label(set, text=excpet_item_list[i], height=int(screen_height*(4/tk_height)), width=int(screen_width*(5/tk_width)), fg="red", relief="groove", bg="#ebebeb",
+              font="Helvetica 8 bold").place(x=screen_width*(525/tk_width), y=screen_height*(135/tk_height) + (i*screen_height*(61/tk_height)) , relx=0.01, rely=0.01)
 
     ###예외 지역 설정 엔트리
     ##CAM1
-    EB1_X = Entry(set, width=5, relief="groove", font="Helvetica 35 bold")
-    EB1_X.place(x=45, y=(qr_height / 8) + 0 , relx=0.01, rely=0.01)
+    EB1_X = Entry(set, width=int(screen_width*(5/tk_width)), relief="groove", font="Helvetica 35 bold")
+    EB1_X.place(x=screen_width*(45/tk_width), y=screen_height*(135/tk_height) + 0 , relx=0.01, rely=0.01)
 
-    EB1_Y = Entry(set, width=5, relief="groove", font="Helvetica 35 bold")
-    EB1_Y.place(x=45, y=(qr_height / 8) + 61 , relx=0.01, rely=0.01)
+    EB1_Y = Entry(set, width=int(screen_width*(5/tk_width)), relief="groove", font="Helvetica 35 bold")
+    EB1_Y.place(x=screen_width*(45/tk_width), y=screen_height*(135/tk_height) + screen_height*(61/tk_height) , relx=0.01, rely=0.01)
 
-    EB1_W = Entry(set, width=5, relief="groove", font="Helvetica 35 bold")
-    EB1_W.place(x=45, y=(qr_height / 8) + 122 , relx=0.01, rely=0.01)
+    EB1_W = Entry(set, width=int(screen_width*(5/tk_width)), relief="groove", font="Helvetica 35 bold")
+    EB1_W.place(x=screen_width*(45/tk_width), y=screen_height*(135/tk_height) + screen_height*(122/tk_height) , relx=0.01, rely=0.01)
 
-    EB1_H = Entry(set, width=5, relief="groove", font="Helvetica 35 bold")
-    EB1_H.place(x=45, y=(qr_height / 8) + 183 , relx=0.01, rely=0.01)
+    EB1_H = Entry(set, width=int(screen_width*(5/tk_width)), relief="groove", font="Helvetica 35 bold")
+    EB1_H.place(x=screen_width*(45/tk_width), y=screen_height*(135/tk_height) + screen_height*(183/tk_height) , relx=0.01, rely=0.01)
 
 
     ##CAM2
-    EB2_X = Entry(set, width=5, relief="groove", font="Helvetica 35 bold")
-    EB2_X.place(x=305, y=(qr_height / 8) + 0 , relx=0.01, rely=0.01)
+    EB2_X = Entry(set, width=int(screen_width*(5/tk_width)), relief="groove", font="Helvetica 35 bold")
+    EB2_X.place(x=screen_width*(305/tk_width), y=screen_height*(135/tk_height) + 0 , relx=0.01, rely=0.01)
 
-    EB2_Y = Entry(set, width=5, relief="groove", font="Helvetica 35 bold")
-    EB2_Y.place(x=305, y=(qr_height / 8) + 61 , relx=0.01, rely=0.01)
+    EB2_Y = Entry(set, width=int(screen_width*(5/tk_width)), relief="groove", font="Helvetica 35 bold")
+    EB2_Y.place(x=screen_width*(305/tk_width), y=screen_height*(135/tk_height) + screen_height*(61/tk_height) , relx=0.01, rely=0.01)
 
-    EB2_W = Entry(set, width=5, relief="groove", font="Helvetica 35 bold")
-    EB2_W.place(x=305, y=(qr_height / 8) + 122 , relx=0.01, rely=0.01)
+    EB2_W = Entry(set, width=int(screen_width*(5/tk_width)), relief="groove", font="Helvetica 35 bold")
+    EB2_W.place(x=screen_width*(305/tk_width), y=screen_height*(135/tk_height) + screen_height*(122/tk_height) , relx=0.01, rely=0.01)
 
-    EB2_H = Entry(set, width=5, relief="groove", font="Helvetica 35 bold")
-    EB2_H.place(x=305, y=(qr_height / 8) + 183 , relx=0.01, rely=0.01)
+    EB2_H = Entry(set, width=int(screen_width*(5/tk_width)), relief="groove", font="Helvetica 35 bold")
+    EB2_H.place(x=screen_width*(305/tk_width), y=screen_height*(135/tk_height) + screen_height*(183/tk_height) , relx=0.01, rely=0.01)
 
     ##CAM3
-    EB3_X = Entry(set, width=5, relief="groove", font="Helvetica 35 bold")
-    EB3_X.place(x=565, y=(qr_height / 8) + 0 , relx=0.01, rely=0.01)
+    EB3_X = Entry(set, width=int(screen_width*(5/tk_width)), relief="groove", font="Helvetica 35 bold")
+    EB3_X.place(x=screen_width*(565/tk_width), y=screen_height*(135/tk_height) + 0 , relx=0.01, rely=0.01)
 
-    EB3_Y = Entry(set, width=5, relief="groove", font="Helvetica 35 bold")
-    EB3_Y.place(x=565, y=(qr_height / 8) + 61 , relx=0.01, rely=0.01)
+    EB3_Y = Entry(set, width=int(screen_width*(5/tk_width)), relief="groove", font="Helvetica 35 bold")
+    EB3_Y.place(x=screen_width*(565/tk_width), y=screen_height*(135/tk_height) + screen_height*(61/tk_height) , relx=0.01, rely=0.01)
 
-    EB3_W = Entry(set, width=5, relief="groove", font="Helvetica 35 bold")
-    EB3_W.place(x=565, y=(qr_height / 8) + 122 , relx=0.01, rely=0.01)
+    EB3_W = Entry(set, width=int(screen_width*(5/tk_width)), relief="groove", font="Helvetica 35 bold")
+    EB3_W.place(x=screen_width*(565/tk_width), y=screen_height*(135/tk_height) + screen_height*(122/tk_height) , relx=0.01, rely=0.01)
 
-    EB3_H = Entry(set, width=5, relief="groove", font="Helvetica 35 bold")
-    EB3_H.place(x=565, y=(qr_height / 8) + 183 , relx=0.01, rely=0.01)
+    EB3_H = Entry(set, width=int(screen_width*(5/tk_width)), relief="groove", font="Helvetica 35 bold")
+    EB3_H.place(x=screen_width*(565/tk_width), y=screen_height*(135/tk_height) + screen_height*(183/tk_height) , relx=0.01, rely=0.01)
 
     text_list = ["CAM1 Add", "CAM2 Add", "CAM3 Add"]
     command_list = [add_exception_area_cam1, add_exception_area_cam2, add_exception_area_cam3]
     for i in range(3):
-        Button(set, text=text_list[i], font="돋움체", relief="raised", overrelief="solid", bg="#ebebeb", \
-               width=8, height=14, bd=3, padx=2, pady=2, command=command_list[i]).place(x=190 + (i * 262), y=140)
+        Button(set, text=text_list[i], font="Helvetica 10", relief="raised", overrelief="solid", bg="#ebebeb", \
+               width=int(screen_width*(8/tk_width)), height=int(screen_height*(14/tk_height)), bd=3, padx=2, pady=2, command=command_list[i]).place(x=screen_width*(190/tk_width) + (i * screen_width*(262/tk_width)), y=screen_height*(140/tk_height))
+
 
 def mouse_position(event):
     global EB1_X, EB1_Y, EB1_W, EB1_H, EB2_X, EB2_Y, EB2_W, EB2_H, EB3_X, EB3_Y, EB3_W, EB3_H
@@ -1493,70 +1509,72 @@ def execute():
     root.bind("<Double-Button-1>", mouse_position)
     #root.bind("<Motion>", mouse_position)
 
+    screen_width = root.winfo_screenwidth()
+    screen_height = root.winfo_screenheight()
+    tk_width, tk_height = 1920, 1080
+
     cam1_label = Label(root)
-    cam1_label.place(y=10, anchor=NW)
+    cam1_label.place(y=screen_height*(10/tk_height), anchor=NW)
 
     cam2_label = Label(root)
-    cam2_label.place(x=640, y=10)
+    cam2_label.place(x=screen_width*(640/tk_width), y=screen_height*(10/tk_height))
 
     cam3_label = Label(root)
-    cam3_label.place(x=1280, y=10)
+    cam3_label.place(x=screen_width*(1280/tk_width), y=screen_height*(10/tk_height))
 
     cam4_label = Label(root)
-    cam4_label.place(x = 1155, y = 780)
+    cam4_label.place(x = screen_width*(1155/tk_width), y = screen_height*(780/tk_height))
 
     image_label = Label(root)
-    image_label.place(x=1138, y=(1080 / 3) + 205)
+    image_label.place(x=screen_width*(1138/tk_width), y=(screen_height / 3) + screen_height*(205/tk_height))
 
-    #width, height = 640, 480
-
-    qr_width, qr_height = 1920, 1080
     root.title("Check_Rivet")
-    root.geometry("{}x{}+{}+{}".format(qr_width, qr_height, -10, 0))
+    root.geometry("{}x{}+{}+{}".format(screen_width, screen_height, -10, 0))
 
     name = ["시리얼 넘버 입력\nInput SerialNumber", "시리얼 넘버\nSerialNumber", "판독시간\nTime", "판독 수량\nNo. of Accumulation",
             "합격 수량\nNo. of OK", "불합격수량\nNo. of NG"]
 
-    ##Label 생성
+    ##정보 Label 생성
     for i in range(6):
-        Label(root, text=name[i], height=5, width=17, fg="red", relief="groove", bg="#ebebeb") \
-            .place(x=95, y=(qr_height / 3) + 140 + (i * 80), relx=0.01, rely=0.01)
+        Label(root, text=name[i], height=int(screen_height*(5/tk_height)), width=int(screen_width*(17/tk_width)), fg="red", relief="groove", bg="#ebebeb") \
+            .place(x=screen_width*(95/tk_width), y=(screen_height / 3) + 140 + (i * 80), relx=0.01, rely=0.01)
         #Label(root, text=name[i], height=5, width=17, fg="red", relief="groove", bg="#ebebeb") \
         #    .place(x=1055, y=(qr_height / 3) + 140 + (i * 80), relx=0.01, rely=0.01)
 
-    Label(root, text="Rivet \nDetect Info", height=25, width=11, fg="red", relief="groove", bg="#ebebeb",
-          font="Helvetica 13 bold").place(x=-14, y=(qr_height / 3) + 140 + (0 * 80), relx=0.01, rely=0.01)
+    Label(root, text="Rivet \nDetect Info", height=int(screen_height*(25/tk_height)), width=int(screen_width*(11/tk_width)), fg="red", relief="groove", bg="#ebebeb",
+          font="Helvetica 13 bold").place(x=-14, y=(screen_height / 3) + 140 + (0 * 80), relx=0.01, rely=0.01)
 
-    Label(root, text="전체 이미지\nFull Image\n(reduced)", height=10, width=13, fg="red", relief="groove", bg="#ebebeb",
-          font="Helvetica 13 bold").place(x=970, y=(qr_height / 3) + 195 + (0 * 80), relx=0.01, rely=0.01)
-    Label(root, text="바코드 카메라\nBarcode CAM", height=12, width=13, fg="red", relief="groove", bg="#ebebeb",
-          font="Helvetica 13 bold").place(x=970, y=(qr_height / 3) + 390 + (0 * 80), relx=0.01, rely=0.01)
-    Label(root, text="결과\nResult", height=12, width=13, fg="red", relief="groove", bg="#ebebeb",
-          font="Helvetica 13 bold").place(x=1420, y=(qr_height / 3) + 390 + (0 * 80), relx=0.01, rely=0.01)
+    Label(root, text="전체 이미지\nFull Image\n(reduced)", height=int(screen_height*(10/tk_height)), width=int(screen_width*(13/tk_width)), fg="red", relief="groove", bg="#ebebeb",
+          font="Helvetica 13 bold").place(x=screen_width*(970/tk_width), y=(screen_height / 3) + 195 + (0 * 80), relx=0.01, rely=0.01)
+
+    Label(root, text="바코드 카메라\nBarcode CAM", height=int(screen_height*(12/tk_height)), width=int(screen_width*(13/tk_width)), fg="red", relief="groove", bg="#ebebeb",
+          font="Helvetica 13 bold").place(x=screen_width*(970/tk_width), y=(screen_height / 3) + 390 + (0 * 80), relx=0.01, rely=0.01)
+
+    Label(root, text="결과\nResult", height=int(screen_height*(12/tk_height)), width=int(screen_width*(13/tk_width)), fg="red", relief="groove", bg="#ebebeb",
+          font="Helvetica 13 bold").place(x=screen_width*(1420/tk_width), y=(screen_height / 3) + 390 + (0 * 80), relx=0.01, rely=0.01)
 
     CAM_name_list = ["CAM1", "CAM2", "CAM3"]
     for i in range(3):
-        Label(root, text=CAM_name_list[i], height=2, width=15, fg="red", relief="groove", bg="#ebebeb",
-              font="Helvetica 13 bold").place(x=1160 + (i*260), y=(qr_height / 3) + 140 + (0 * 80), relx=0.01, rely=0.01)
+        Label(root, text=CAM_name_list[i], height=int(screen_height*(2/tk_height)), width=int(screen_width*(15/tk_width)), fg="red", relief="groove", bg="#ebebeb",
+              font="Helvetica 13 bold").place(x=screen_width*(1160/tk_width) + (i*260), y=(screen_height / 3) + 140 + (0 * 80), relx=0.01, rely=0.01)
 
+    RV_SN = Entry(root, width=int(screen_width*(19/tk_width)), relief="groove", font="Helvetica 50 bold")
+    RV_SN.place(x=screen_width*(218/tk_width), y=(screen_height / 3) + 140 + (0 * 80), relx=0.01, rely=0.01)
 
-    RV_SN = Entry(root, width=19, relief="groove", font="Helvetica 50 bold")
-    RV_SN.place(x=218, y=(qr_height / 3) + 140 + (0 * 80), relx=0.01, rely=0.01)
+    RV_P1 = Entry(root, width=int(screen_width*(19/tk_width)), relief="groove", font="Helvetica 50 bold")
+    RV_P1.place(x=screen_width*(218/tk_width), y=(screen_height / 3) + 140 + (1 * 80), relx=0.01, rely=0.01)
 
-    RV_P1 = Entry(root, width=19, relief="groove", font="Helvetica 50 bold")
-    RV_P1.place(x=218, y=(qr_height / 3) + 140 + (1 * 80), relx=0.01, rely=0.01)
+    RV_P2 = Entry(root, width=int(screen_width*(19/tk_width)), relief="groove", font="Helvetica 50 bold")
+    RV_P2.place(x=screen_width*(218/tk_width), y=(screen_height / 3) + 140 + (2 * 80), relx=0.01, rely=0.01)
 
-    RV_P2 = Entry(root, width=19, relief="groove", font="Helvetica 50 bold")
-    RV_P2.place(x=218, y=(qr_height / 3) + 140 + (2 * 80), relx=0.01, rely=0.01)
+    RV_P3 = Entry(root, width=int(screen_width*(19/tk_width)), relief="groove", font="Helvetica 50 bold")
+    RV_P3.place(x=screen_width*(218/tk_width), y=(screen_height / 3) + 140 + (3 * 80), relx=0.01, rely=0.01)
 
-    RV_P3 = Entry(root, width=19, relief="groove", font="Helvetica 50 bold")
-    RV_P3.place(x=218, y=(qr_height / 3) + 140 + (3 * 80), relx=0.01, rely=0.01)
+    RV_P4 = Entry(root, width=int(screen_width*(19/tk_width)), relief="groove", font="Helvetica 50 bold")
+    RV_P4.place(x=screen_width*(218/tk_width), y=(screen_height / 3) + 140 + (4 * 80), relx=0.01, rely=0.01)
 
-    RV_P4 = Entry(root, width=19, relief="groove", font="Helvetica 50 bold")
-    RV_P4.place(x=218, y=(qr_height / 3) + 140 + (4 * 80), relx=0.01, rely=0.01)
-
-    RV_P5 = Entry(root, width=19, relief="groove", font="Helvetica 50 bold")
-    RV_P5.place(x=218, y=(qr_height / 3) + 140 + (5 * 80), relx=0.01, rely=0.01)
+    RV_P5 = Entry(root, width=int(screen_width*(19/tk_width)), relief="groove", font="Helvetica 50 bold")
+    RV_P5.place(x=screen_width*(218/tk_width), y=(screen_height / 3) + 140 + (5 * 80), relx=0.01, rely=0.01)
 
     setting_window()
 
@@ -1570,4 +1588,5 @@ if __name__=="__main__":
     cap3.release()
     cap4.release()
     cv2.destroyAllWindows()
+
 
