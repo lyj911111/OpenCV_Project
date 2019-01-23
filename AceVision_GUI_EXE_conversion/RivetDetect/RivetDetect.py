@@ -16,7 +16,6 @@ import os
 from tkinter import *
 import socket
 
-
 HOST = ''
 PORT = ''
 #HOST = '192.168.109.150'  # server ip address
@@ -317,11 +316,11 @@ def read_frame():
     global HOST, PORT, PLC_rx, PLC_tx_OK, PLC_tx_NG
     global ser, sock, protocol, port_num, set
 
-    '''
+    
     webCamShow(cap1.read(), cam1_label, 1)
     webCamShow(cap2.read(), cam2_label, 2)
     webCamShow(cap3.read(), cam3_label, 3)
-    '''
+
 
     if check_set == False:
         if Serial_No != pre_Serial_No:
@@ -1588,5 +1587,4 @@ if __name__=="__main__":
     cap3.release()
     cap4.release()
     cv2.destroyAllWindows()
-
 
