@@ -163,6 +163,7 @@ def check_time_value():
     hour = time.hour
     minute = time.minute
     sec = time.second
+
     return year, month, day, hour, minute, sec
 
 def check_rivet_result():
@@ -192,7 +193,6 @@ def leave_log():
 
     fn = datetime.datetime.now()
     folder_name = str(fn.year) + "-" + str("%02d" % fn.month) + "-" + str("%02d" % fn.day)
-
 
     if pre_day != day:
         check_make_folder = 0
@@ -319,11 +319,15 @@ def read_frame():
     global HOST, PORT, PLC_rx, PLC_tx_OK, PLC_tx_NG
     global ser, sock, protocol, port_num, set
 
+    screen_width = root.winfo_screenwidth()
+    screen_height = root.winfo_screenheight()
+    tk_width, tk_height = 1920, 1080
 
+    '''
     webCamShow(cap1.read(), cam1_label, 1)
     webCamShow(cap2.read(), cam2_label, 2)
     webCamShow(cap3.read(), cam3_label, 3)
-
+    '''
 
     if check_set == False:
         if Serial_No != pre_Serial_No:
@@ -348,11 +352,15 @@ def read_frame():
             image_reformat = Reformat_Image(image)
             check_PLC_sensor = 1
 
+        if protocol != 0:
+            result_label.destroy()
+
         if check_PLC_sensor == 1:
             imageShow(image_reformat, image_label)
             if result_rivet == 3:
                 cv2.imwrite(store_location + "%s/rivet/pass/%s.jpg" % (folder_name, Serial_No), image)
-                Label(root, text="OK", font="Helvetica 140 bold", fg="RoyalBlue").place(x=1550, y=780)
+                result_label = Label(root, text="OK", font="Helvetica 140 bold", fg="RoyalBlue")
+                result_label.place(x = screen_width * (1550 / tk_width), y = screen_height * (780 / tk_height))
                 #PLC_tx_OK = str(chr(0x31))
                 if protocol == 1:
                     ser.write(bytes(PLC_tx_OK, encoding='ascii'))
@@ -361,7 +369,8 @@ def read_frame():
 
             else:
                 cv2.imwrite(store_location + "%s/rivet/fail/%s.jpg" % (folder_name, Serial_No), image)
-                Label(root, text="NG", font="Helvetica 140 bold", fg="red").place(x=1600, y=780)
+                result_label = Label(root, text="NG", font="Helvetica 140 bold", fg="red")
+                result_label.place(x = screen_width * (1600 / tk_width), y = screen_height * (780 / tk_height))
                 #PLC_tx_NG = str(chr(0x32))
                 if protocol == 1:
                     ser.write(bytes(PLC_tx_NG, encoding='ascii'))
