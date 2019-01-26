@@ -1,6 +1,3 @@
-# Author  : Won Jae Lee
-# python --version : 3.7.1 and 3.6.4
-
 # -*- coding: utf-8 -*-
 import numpy as np                          # pip install numpy==1.15.4
 import cv2                                  # pip install opencv-python==3.4.4.19
@@ -69,6 +66,7 @@ check_month = 0
 check_day = 0
 check_make_folder = 0
 check_result = 0
+pre_day = 0
 
 Serial_No = ''
 pre_Serial_No = 0
@@ -188,12 +186,16 @@ def leave_log():
     global today, Serial_No, check_result
     global RV_SN, RV_P1, RV_P2, RV_P3, RV_P4, RV_P5
     global check_make_folder, folder_name
-    global store_location
+    global store_location, pre_day
 
     year, month, day, hour, minute, sec = check_time_value()
 
     fn = datetime.datetime.now()
     folder_name = str(fn.year) + "-" + str("%02d" % fn.month) + "-" + str("%02d" % fn.day)
+
+
+    if pre_day != day:
+        check_make_folder = 0
 
     if check_make_folder == 0:
         today = get_today()
@@ -208,7 +210,7 @@ def leave_log():
         check_make_folder = 1
 
     filename = str(year) + str("%02d" % month) + str("%02d" % day)
-    if (year != check_year and month != check_month and day != check_day):
+    if day != check_day:
         print("새로운 로그 파일 생성")
         today = get_today()
         foldername_log = store_location + today + "/rivet" + "/log"
@@ -220,6 +222,7 @@ def leave_log():
         check_year = datetime.datetime.now().year
         check_month = datetime.datetime.now().month
         check_day = datetime.datetime.now().day
+        pre_day = check_day
 
     f = open(store_location + today + "/rivet/log/log_%s.txt" % filename, 'a')
     localtime = str(year) + "-" + str("%02d" % month) + "-" + str("%02d" % day) + " " + str("%02d" % hour) + ":" + str("%02d" % minute) + ":" + str("%02d" % sec)
@@ -316,11 +319,11 @@ def read_frame():
     global HOST, PORT, PLC_rx, PLC_tx_OK, PLC_tx_NG
     global ser, sock, protocol, port_num, set
 
-
+    '''
     webCamShow(cap1.read(), cam1_label, 1)
     webCamShow(cap2.read(), cam2_label, 2)
     webCamShow(cap3.read(), cam3_label, 3)
-
+    '''
 
     if check_set == False:
         if Serial_No != pre_Serial_No:
@@ -1275,7 +1278,6 @@ def check_setting():
         check_set = False
         store_location_input = datapath.get()
 
-
         print(HOST, PORT)
         set.destroy()
 
@@ -1392,23 +1394,23 @@ def setting_window():
     screen_height = set.winfo_screenheight()
     tk_width, tk_height = 1920, 1080
 
-    #set.iconbitmap("aceantenna.ico")
-    set.geometry("{}x{}".format(int(screen_width*(800/tk_width)), int(screen_height*(700/tk_height))))
+    set.iconbitmap("aceantenna.ico")
+    set.geometry("{}x{}".format(int(screen_width*(800/tk_width)), int(screen_height*(675/tk_height))))
     #set.geometry("800x600")
     set.title("Setting Window")
     set.configure(bg="#ebebeb")
 
     Label(set, text="예외지역 설정", font="Helvetica 12 bold", bg="#ebebeb", bd=2, width=int(screen_width*(25/tk_width)), height=int(screen_height*(2/tk_height)), relief="groove", anchor=CENTER).place(x=0, y=0)
-    Label(set, text="데이터 저장 경로 설정", font="Helvetica 12 bold", bg="#ebebeb", bd=2, width=int(screen_width*(25/tk_width)), height=int(screen_height*(2/tk_height)), relief="groove", anchor=CENTER).place(x=0, y=screen_height*(510/tk_height))
+    Label(set, text="데이터 저장 경로 설정", font="Helvetica 12 bold", bg="#ebebeb", bd=2, width=int(screen_width*(25/tk_width)), height=int(screen_height*(2/tk_height)), relief="groove", anchor=CENTER).place(x=0, y=screen_height*(497/tk_height))
 
-    datapath = Entry(set, width=int(screen_width*(35/tk_width)), relief="groove", font="Helvetica 35 bold")
+    datapath = Entry(set, width=int(screen_width*(33/tk_width)), relief="groove", font="Helvetica 33 bold")
     datapath.place(x=0, y=screen_height*(560/tk_height), relx=0.001, rely=0)
 
     Button(set, text="설정 완료", font="Helvetica 13 bold", relief="groove", overrelief="solid", bg="#ebebeb", \
            bd=3, padx=2, pady=2, command=check_setting).pack(side=BOTTOM, fill=X)
 
     Button(set, text="리벳 감지 시작 버튼", font="Helvetica 10", relief="raised", overrelief="solid", bg="#ebebeb", \
-           width=int(screen_width*(20/tk_width)), height=int(screen_height*(2/tk_height)), bd=3, padx=2, pady=2, command=start_detect).place(x=screen_width*(620/tk_width), y=screen_height*(500/tk_height))
+           width=int(screen_width*(20/tk_width)), height=int(screen_height*(2/tk_height)), bd=3, padx=2, pady=2, command=start_detect).place(x=screen_width*(620/tk_width), y=screen_height*(497/tk_height))
 
     ### 통신 방식
     Label(set, text="통신 방식", height=int(screen_height*(4/tk_height)), width=int(screen_width*(10/tk_width)), fg="red", relief="groove", bg="#ebebeb",
@@ -1506,7 +1508,7 @@ def execute():
     global RV_SN, RV_P1, RV_P2, RV_P3, RV_P4, RV_P5, set, datapath
 
     root = Tk()
-    #root.iconbitmap("aceantenna.ico")
+    root.iconbitmap("aceantenna.ico")
 
     root.bind('<Escape>', lambda e: root.quit())
     root.bind("<Double-Button-1>", mouse_position)
@@ -1540,44 +1542,44 @@ def execute():
     ##정보 Label 생성
     for i in range(6):
         Label(root, text=name[i], height=int(screen_height*(5/tk_height)), width=int(screen_width*(17/tk_width)), fg="red", relief="groove", bg="#ebebeb") \
-            .place(x=screen_width*(95/tk_width), y=(screen_height / 3) + 140 + (i * 80), relx=0.01, rely=0.01)
+            .place(x=screen_width*(95/tk_width), y=(screen_height / 3) + screen_height*(140/tk_height) + (i * screen_height*(80/tk_height)), relx=0.01, rely=0.01)
         #Label(root, text=name[i], height=5, width=17, fg="red", relief="groove", bg="#ebebeb") \
         #    .place(x=1055, y=(qr_height / 3) + 140 + (i * 80), relx=0.01, rely=0.01)
 
     Label(root, text="Rivet \nDetect Info", height=int(screen_height*(25/tk_height)), width=int(screen_width*(11/tk_width)), fg="red", relief="groove", bg="#ebebeb",
-          font="Helvetica 13 bold").place(x=-14, y=(screen_height / 3) + 140 + (0 * 80), relx=0.01, rely=0.01)
+          font="Helvetica 13 bold").place(x=-14, y=(screen_height / 3) + screen_height*(140/tk_height) + (0 * screen_height*(80/tk_height)), relx=0.01, rely=0.01)
 
     Label(root, text="전체 이미지\nFull Image\n(reduced)", height=int(screen_height*(10/tk_height)), width=int(screen_width*(13/tk_width)), fg="red", relief="groove", bg="#ebebeb",
-          font="Helvetica 13 bold").place(x=screen_width*(970/tk_width), y=(screen_height / 3) + 195 + (0 * 80), relx=0.01, rely=0.01)
+          font="Helvetica 13 bold").place(x=screen_width*(970/tk_width), y=(screen_height / 3) + screen_height*(195/tk_height) + (0 * screen_height*(80/tk_height)), relx=0.01, rely=0.01)
 
     Label(root, text="바코드 카메라\nBarcode CAM", height=int(screen_height*(12/tk_height)), width=int(screen_width*(13/tk_width)), fg="red", relief="groove", bg="#ebebeb",
-          font="Helvetica 13 bold").place(x=screen_width*(970/tk_width), y=(screen_height / 3) + 390 + (0 * 80), relx=0.01, rely=0.01)
+          font="Helvetica 13 bold").place(x=screen_width*(970/tk_width), y=(screen_height / 3) + screen_height*(390/tk_height) + (0 * screen_height*(80/tk_height)), relx=0.01, rely=0.01)
 
     Label(root, text="결과\nResult", height=int(screen_height*(12/tk_height)), width=int(screen_width*(13/tk_width)), fg="red", relief="groove", bg="#ebebeb",
-          font="Helvetica 13 bold").place(x=screen_width*(1420/tk_width), y=(screen_height / 3) + 390 + (0 * 80), relx=0.01, rely=0.01)
+          font="Helvetica 13 bold").place(x=screen_width*(1420/tk_width), y=(screen_height / 3) + screen_height*(390/tk_height) + (0 * screen_height*(80/tk_height)), relx=0.01, rely=0.01)
 
     CAM_name_list = ["CAM1", "CAM2", "CAM3"]
     for i in range(3):
         Label(root, text=CAM_name_list[i], height=int(screen_height*(2/tk_height)), width=int(screen_width*(15/tk_width)), fg="red", relief="groove", bg="#ebebeb",
-              font="Helvetica 13 bold").place(x=screen_width*(1160/tk_width) + (i*260), y=(screen_height / 3) + 140 + (0 * 80), relx=0.01, rely=0.01)
+              font="Helvetica 13 bold").place(x=screen_width*(1160/tk_width) + (i*260), y=(screen_height / 3) + screen_height*(140/tk_height) + (0 * screen_height*(80/tk_height)), relx=0.01, rely=0.01)
 
     RV_SN = Entry(root, width=int(screen_width*(19/tk_width)), relief="groove", font="Helvetica 50 bold")
-    RV_SN.place(x=screen_width*(218/tk_width), y=(screen_height / 3) + 140 + (0 * 80), relx=0.01, rely=0.01)
+    RV_SN.place(x=screen_width*(218/tk_width), y=(screen_height / 3) + screen_height*(140/tk_height) + (0 * screen_height*(80/tk_height)), relx=0.01, rely=0.01)
 
     RV_P1 = Entry(root, width=int(screen_width*(19/tk_width)), relief="groove", font="Helvetica 50 bold")
-    RV_P1.place(x=screen_width*(218/tk_width), y=(screen_height / 3) + 140 + (1 * 80), relx=0.01, rely=0.01)
+    RV_P1.place(x=screen_width*(218/tk_width), y=(screen_height / 3) + screen_height*(140/tk_height) + (1 * screen_height*(80/tk_height)), relx=0.01, rely=0.01)
 
     RV_P2 = Entry(root, width=int(screen_width*(19/tk_width)), relief="groove", font="Helvetica 50 bold")
-    RV_P2.place(x=screen_width*(218/tk_width), y=(screen_height / 3) + 140 + (2 * 80), relx=0.01, rely=0.01)
+    RV_P2.place(x=screen_width*(218/tk_width), y=(screen_height / 3) + screen_height*(140/tk_height) + (2 * screen_height*(80/tk_height)), relx=0.01, rely=0.01)
 
     RV_P3 = Entry(root, width=int(screen_width*(19/tk_width)), relief="groove", font="Helvetica 50 bold")
-    RV_P3.place(x=screen_width*(218/tk_width), y=(screen_height / 3) + 140 + (3 * 80), relx=0.01, rely=0.01)
+    RV_P3.place(x=screen_width*(218/tk_width), y=(screen_height / 3) + screen_height*(140/tk_height) + (3 * screen_height*(80/tk_height)), relx=0.01, rely=0.01)
 
     RV_P4 = Entry(root, width=int(screen_width*(19/tk_width)), relief="groove", font="Helvetica 50 bold")
-    RV_P4.place(x=screen_width*(218/tk_width), y=(screen_height / 3) + 140 + (4 * 80), relx=0.01, rely=0.01)
+    RV_P4.place(x=screen_width*(218/tk_width), y=(screen_height / 3) + screen_height*(140/tk_height) + (4 * screen_height*(80/tk_height)), relx=0.01, rely=0.01)
 
     RV_P5 = Entry(root, width=int(screen_width*(19/tk_width)), relief="groove", font="Helvetica 50 bold")
-    RV_P5.place(x=screen_width*(218/tk_width), y=(screen_height / 3) + 140 + (5 * 80), relx=0.01, rely=0.01)
+    RV_P5.place(x=screen_width*(218/tk_width), y=(screen_height / 3) + screen_height*(140/tk_height) + (5 * screen_height*(80/tk_height)), relx=0.01, rely=0.01)
 
     setting_window()
 
