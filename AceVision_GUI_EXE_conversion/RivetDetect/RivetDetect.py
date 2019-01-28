@@ -211,7 +211,7 @@ def leave_log():
 
     filename = str(year) + str("%02d" % month) + str("%02d" % day)
     if day != check_day:
-        print("새로운 로그 파일 생성")
+        #print("새로운 로그 파일 생성")
         today = get_today()
         foldername_log = store_location + today + "/rivet" + "/log"
         make_folder(foldername_log)
@@ -248,7 +248,7 @@ def image_save():
     ##전체 이미지 저장 경로 설정
     #cv2.imwrite("%s.jpg"%(Serial_No), image_add)
 
-    print("이미지 저장 완료")
+    #print("이미지 저장 완료")
     return image_add
 
 def webCamShow(N, Display, cam_no):
@@ -304,8 +304,8 @@ def decode(im) :
         RV_P3.delete(0, END)
         RV_P4.delete(0, END)
         RV_P5.delete(0, END)
-        print("=======\n", decodedObjects)
-        print("Serial_No :", Serial_No)
+        #print("=======\n", decodedObjects)
+        #print("Serial_No :", Serial_No)
 
 def read_frame():
     ## 바코드 인식 카메라 추가 시 바코드 리드 함수 추가 위치 ##
@@ -347,7 +347,7 @@ def read_frame():
             check_cam2_judge = 0
             check_cam3_judge = 0
             PLC_sensor = False
-            print("로그 완료")
+            #print("로그 완료")
             image = image_save()
             image_reformat = Reformat_Image(image)
             check_PLC_sensor = 1
@@ -388,17 +388,17 @@ def TCP_IP():
     global HOST, PORT, PLC_rx, sock
     global PLC_sensor
 
-    #print("HOST:", HOST)
+    ##print("HOST:", HOST)
     PORT = int(PORT)
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect((HOST, PORT))
     receive_data = sock.recv(1024)  # 서버로 부터 오는 데이터
     receive_data = receive_data.decode('utf-8')
-    print("서버에서 받은 메세지 : ", receive_data)  # 서버에서 받은 데이터를 출력.
+    #print("서버에서 받은 메세지 : ", receive_data)  # 서버에서 받은 데이터를 출력.
 
     receive_data = receive_data.lower()
 
-    print("최종 receive_data : ", receive_data)
+    #print("최종 receive_data : ", receive_data)
     if receive_data == PLC_rx:
         PLC_sensor = True
 
@@ -412,9 +412,9 @@ def RS_232():
     PLC_ready = res.decode()[:len(res)-2] #공백이 있을시 추가.
     PLC_ready = PLC_ready.lower()
 
-    print("PLC_ready : ", PLC_ready)
+    #print("PLC_ready : ", PLC_ready)
     if PLC_ready == 'ready':
-        print("아두이노로 부터 받은 프로토콜:", PLC_ready)            # 받은 프로토콜
+        #print("아두이노로 부터 받은 프로토콜:", PLC_ready)            # 받은 프로토콜
         PLC_sensor = True
     else:
         pass
@@ -432,7 +432,7 @@ def RivetDetect_cam1(frame):
     global PLC_sensor, check_cam1_judge, folder_name, check_detect
 
     # col,row,_ = frame.shape # frame 화면크기 출력, (y ,x) = (480x640)
-    # print(col,row)
+    # #print(col,row)
     frame2 = frame.copy()  # 영상원본
     frame_cam1 = frame.copy()
 
@@ -507,16 +507,16 @@ def RivetDetect_cam1(frame):
     check_rivet_fail_cam1 = 0
     pixel_sum = 0
 
-    #print("*" * 10)
-    #print(Start_except_box_cam1)
+    ##print("*" * 10)
+    ##print(Start_except_box_cam1)
 
     if Start_except_box_cam1 == 1:
         cam1_rect_list.append(cam1_box_idx)
         cam1_except_list.append([cam1_box_width, cam1_box_height])
         Start_except_box_cam1 = 0
-        print("rect_list", cam1_rect_list)
-        print(exception_box_cam1)
-        print(cam1_box_list)
+        #print("rect_list", cam1_rect_list)
+        #print(exception_box_cam1)
+        #print(cam1_box_list)
 
 
     if check_detect == False:
@@ -560,7 +560,7 @@ def RivetDetect_cam1(frame):
                         cv2.circle(frame, (cx_origin, cy_origin), 10, (0, 255, 0), -1)  # 처음에 찍힌 원래 중심 좌표 표시, 예외처리 하기 전 중심좌표들 표시
 
         ##### 자동 좌표값 저장하기 #####
-        #print(str(num) + " 저장된 리벳의 좌표:", Rivet_center1)  # 자동 저장된 중심점값 출력
+        ##print(str(num) + " 저장된 리벳의 좌표:", Rivet_center1)  # 자동 저장된 중심점값 출력
         Rivet_num1 = len(Rivet_center1)  # 자동 저장된 리벳의 갯수값 저장.
 
         Rivet_tuple_cam1 = []
@@ -587,7 +587,7 @@ def RivetDetect_cam1(frame):
         # [y , x]의 픽셀값 입력받음.
         pixel_val_list = []
 
-        #print("Rivet_num1 : ",Rivet_num1)
+        ##print("Rivet_num1 : ",Rivet_num1)
         # 리벳이 탐지유무에 따른 화면 출력.
         if Rivet_num1 != 0:
             for i in range(Rivet_num1):
@@ -606,7 +606,7 @@ def RivetDetect_cam1(frame):
                 pixel_val_list.append(pixel_val1)  # 변환된 값을 리스트에 추가
                 pixel_sum = sum(pixel_val_list)  # 모든 픽셀의 합
 
-            # print(pixel_val_list, pixel_sum)    # 픽셀값과 합계 출력
+            # #print(pixel_val_list, pixel_sum)    # 픽셀값과 합계 출력
         #else:
             #cv2.putText(frame, "No data", (50, 300), font, 2, (255, 0, 0), 2, cv2.LINE_AA)
 
@@ -616,7 +616,7 @@ def RivetDetect_cam1(frame):
             check_cam1_judge = 1
             frame_cam1 = frame
             #accum = accum + 1  # 누적 판독수 축적.
-            print("===== cam1 판독중 =====")
+            #print("===== cam1 판독중 =====")
             if pixel_sum == Rivet_num1:
                 if Rivet_num1 == 0:
                     cv2.putText(frame_cam1, "No Data", (500, 50), font, 1, (255, 0, 0), 2, cv2.LINE_AA)
@@ -631,7 +631,7 @@ def RivetDetect_cam1(frame):
                 check_rivet_fail_cam1 = 1
                 cv2.putText(frame_cam1, "NG", (550, 50), font, 1, (0, 0, 255), 2, cv2.LINE_AA)
 
-        #print("accum_cam1, count_pass_rivet_cam1, count_fail_rivet_cam1", accum_cam1, count_pass_rivet_cam1, count_fail_rivet_cam1)
+        ##print("accum_cam1, count_pass_rivet_cam1, count_fail_rivet_cam1", accum_cam1, count_pass_rivet_cam1, count_fail_rivet_cam1)
 
     return frame
 
@@ -647,7 +647,7 @@ def RivetDetect_cam2(frame):
     global PLC_sensor, check_cam2_judge, check_detect
 
     # col,row,_ = frame.shape # frame 화면크기 출력, (y ,x) = (480x640)
-    # print(col,row)
+    # #print(col,row)
     frame2 = frame.copy()  # 영상원본
     frame_cam2 = frame.copy()
 
@@ -722,16 +722,16 @@ def RivetDetect_cam2(frame):
     check_rivet_fail_cam2 = 0
     pixel_sum = 0
 
-    #print("*"*10)
-    #print(Start_except_box_cam2)
+    ##print("*"*10)
+    ##print(Start_except_box_cam2)
 
     if Start_except_box_cam2 == 1:
         cam2_rect_list.append(cam2_box_idx)
         cam2_except_list.append([cam2_box_width, cam2_box_height])
         Start_except_box_cam2 = 0
-        print("cam2_rect_list", cam2_rect_list)
-        print("cam2_except_list", cam2_except_list)
-        print("cam2_box_list", cam2_box_list)
+        #print("cam2_rect_list", cam2_rect_list)
+        #print("cam2_except_list", cam2_except_list)
+        #print("cam2_box_list", cam2_box_list)
 
     if check_detect == False:
         for i in range(len(cam2_rect_list)):
@@ -775,7 +775,7 @@ def RivetDetect_cam2(frame):
                         cv2.circle(frame, (cx_origin, cy_origin), 10, (0, 255, 0), -1)  # 처음에 찍힌 원래 중심 좌표 표시, 예외처리 하기 전 중심좌표들 표시
 
         ##### 자동 좌표값 저장하기 #####
-        #print(str(num) + " 저장된 리벳의 좌표:", Rivet_center2)  # 자동 저장된 중심점값 출력
+        ##print(str(num) + " 저장된 리벳의 좌표:", Rivet_center2)  # 자동 저장된 중심점값 출력
         Rivet_num2 = len(Rivet_center2)  # 자동 저장된 리벳의 갯수값 저장.
 
         Rivet_tuple_cam2 = []
@@ -802,7 +802,7 @@ def RivetDetect_cam2(frame):
         # [y , x]의 픽셀값 입력받음.
         pixel_val_list = []
 
-        #print("Rivet_num2 : ",Rivet_num2)
+        ##print("Rivet_num2 : ",Rivet_num2)
         # 리벳이 탐지유무에 따른 화면 출력.
         if Rivet_num2 != 0:
             for i in range(Rivet_num2):
@@ -821,7 +821,7 @@ def RivetDetect_cam2(frame):
                 pixel_val_list.append(pixel_val2)  # 변환된 값을 리스트에 추가
                 pixel_sum = sum(pixel_val_list)  # 모든 픽셀의 합
 
-            # print(pixel_val_list, pixel_sum)    # 픽셀값과 합계 출력
+            # #print(pixel_val_list, pixel_sum)    # 픽셀값과 합계 출력
         #else:
         #    cv2.putText(frame, "No data", (50, 300), font, 2, (255, 0, 0), 2, cv2.LINE_AA)
 
@@ -833,7 +833,7 @@ def RivetDetect_cam2(frame):
             #accum = accum + 1  # 누적 판독수 축적.
 
             frame_cam2 = frame
-            print("===== cam2 판독중 =====")
+            #print("===== cam2 판독중 =====")
             if pixel_sum == Rivet_num2:
                 if Rivet_num2 == 0:
                     cv2.putText(frame_cam2, "No Data", (500, 50), font, 1, (255, 0, 0), 2, cv2.LINE_AA)
@@ -851,7 +851,7 @@ def RivetDetect_cam2(frame):
             accum_cam2 = count_pass_rivet_cam2 + count_fail_rivet_cam2
             #leave_log(num)  # 판독값을 로그로 남김.
 
-        #print("accum_cam2, count_pass_rivet_cam2, count_fail_rivet_cam2", accum_cam2, count_pass_rivet_cam2, count_fail_rivet_cam2)
+        ##print("accum_cam2, count_pass_rivet_cam2, count_fail_rivet_cam2", accum_cam2, count_pass_rivet_cam2, count_fail_rivet_cam2)
     return frame
 
 def RivetDetect_cam3(frame):
@@ -866,7 +866,7 @@ def RivetDetect_cam3(frame):
     global PLC_sensor, check_cam3_judge, check_detect
 
     # col,row,_ = frame.shape # frame 화면크기 출력, (y ,x) = (480x640)
-    # print(col,row)
+    # #print(col,row)
     frame2 = frame.copy()  # 영상원본
     frame_cam3 = frame.copy()
 
@@ -940,16 +940,16 @@ def RivetDetect_cam3(frame):
     check_rivet_fail_cam3 = 0
     pixel_sum = 0
 
-    #print("*"*10)
-    #print(Start_except_box_cam3)
+    ##print("*"*10)
+    ##print(Start_except_box_cam3)
 
     if Start_except_box_cam3 == 1:
         cam3_rect_list.append(cam3_box_idx)
         cam3_except_list.append([cam3_box_width, cam3_box_height])
         Start_except_box_cam3 = 0
-        print("rect_list", cam3_rect_list)
-        print(exception_box_cam3)
-        print(cam3_box_list)
+        #print("rect_list", cam3_rect_list)
+        #print(exception_box_cam3)
+        #print(cam3_box_list)
 
     if check_detect == False:
         for i in range(len(cam3_rect_list)):
@@ -995,7 +995,7 @@ def RivetDetect_cam3(frame):
                         cv2.circle(frame, (cx_origin, cy_origin), 10, (0, 255, 0), -1)  # 처음에 찍힌 원래 중심 좌표 표시, 예외처리 하기 전 중심좌표들 표시
 
         ##### 자동 좌표값 저장하기 #####
-        #print(str(num) + " 저장된 리벳의 좌표:", Rivet_center3)  # 자동 저장된 중심점값 출력
+        ##print(str(num) + " 저장된 리벳의 좌표:", Rivet_center3)  # 자동 저장된 중심점값 출력
         Rivet_num3 = len(Rivet_center3)  # 자동 저장된 리벳의 갯수값 저장.
 
         Rivet_tuple_cam3 = []
@@ -1022,7 +1022,7 @@ def RivetDetect_cam3(frame):
         # [y , x]의 픽셀값 입력받음.
         pixel_val_list = []
 
-        #print("Rivet_num3 : ",Rivet_num1)
+        ##print("Rivet_num3 : ",Rivet_num1)
         # 리벳이 탐지유무에 따른 화면 출력.
         if Rivet_num3 != 0:
             for i in range(Rivet_num3):
@@ -1046,7 +1046,7 @@ def RivetDetect_cam3(frame):
             check_cam3_judge = 1
 
             frame_cam3 = frame
-            print("===== cam3 판독중 =====")
+            #print("===== cam3 판독중 =====")
             if pixel_sum == Rivet_num3:
                 if Rivet_num3 == 0:
                     cv2.putText(frame_cam3, "No Data", (500, 50), font, 1, (255, 0, 0), 2, cv2.LINE_AA)
@@ -1108,17 +1108,17 @@ def add_exception_area_cam1():
             if (0 <= abs(list_delete_item[i][0] - x) and abs(list_delete_item[i][0] - x) <= 5)\
                 and (0 <= abs(list_delete_item[i][1] - y) and abs(list_delete_item[i][1] - y) <= 5):
                 idx = i
-                print("idx", idx)
+                #print("idx", idx)
 
         cam1_box_idx = save_revet_center1.index([list_delete_item[idx][0], list_delete_item[idx][1]])
-        print("cam2_box_idx", cam1_box_idx)
+        #print("cam2_box_idx", cam1_box_idx)
 
-        print("delte item", list_delete_item)
+        #print("delte item", list_delete_item)
         cam1_box_list.append(save_revet_center1[cam1_box_idx])
         for i in range(len(list_delete_item)):
             Rivet_center1.remove([list_delete_item[i][0], list_delete_item[i][1]])
 
-        print(Rivet_center1)
+        #print(Rivet_center1)
 
     except IndexError:
         Start_except_box_cam1 = 0
@@ -1133,7 +1133,7 @@ def add_exception_area_cam2():
     global rivet_center_flag2, save_revet_center2
     global cam2_box_list
 
-    print("add_exception_area_cam2 함수 실행")
+    #print("add_exception_area_cam2 함수 실행")
 
     try:
         x = eval(EB2_X.get())
@@ -1141,8 +1141,8 @@ def add_exception_area_cam2():
         cam2_box_width = eval(EB2_W.get())
         cam2_box_height = eval(EB2_H.get())
         exception_box_cam2.append([x, y])
-        print("cam2_box_width, cam2_box_height",cam2_box_width, cam2_box_height)
-        print("exception_box_cam2", exception_box_cam2)
+        #print("cam2_box_width, cam2_box_height",cam2_box_width, cam2_box_height)
+        #print("exception_box_cam2", exception_box_cam2)
         EB1_X.delete(0, END)
         EB1_Y.delete(0, END)
         EB2_X.delete(0, END)
@@ -1157,9 +1157,9 @@ def add_exception_area_cam2():
         if (rivet_center_flag2 == 0):
             rivet_center_flag2 = 1
             save_revet_center2 = Rivet_center2
-            print("save_revet_center2", save_revet_center2)
+            #print("save_revet_center2", save_revet_center2)
 
-        print("Rivet_center2", Rivet_center2)
+        #print("Rivet_center2", Rivet_center2)
         idx = 0
         list_delete_item = []
         for i in range(len(exception_box_cam2)):
@@ -1171,23 +1171,23 @@ def add_exception_area_cam2():
                     list_delete_item.append([Rivet_center2[j][0], Rivet_center2[j][1]])
 
         list_delete_item = list(unique_everseen(list_delete_item))
-        print("list_delete_item", list_delete_item)
+        #print("list_delete_item", list_delete_item)
 
         for i in range(len(list_delete_item)):
             if (0 <= abs(list_delete_item[i][0] - x) and abs(list_delete_item[i][0] - x) <= 5)\
                 and (0 <= abs(list_delete_item[i][1] - y) and abs(list_delete_item[i][1] - y) <= 5):
                 idx = i
-                print("idx", idx)
+                #print("idx", idx)
 
         cam2_box_idx = save_revet_center2.index([list_delete_item[idx][0], list_delete_item[idx][1]])
-        print("cam2_box_idx", cam2_box_idx)
+        #print("cam2_box_idx", cam2_box_idx)
 
-        print("delte item", list_delete_item)
+        #print("delte item", list_delete_item)
         cam2_box_list.append(save_revet_center2[cam2_box_idx])
         for i in range(len(list_delete_item)):
             Rivet_center2.remove([list_delete_item[i][0], list_delete_item[i][1]])
 
-        print("Rivet_center2", Rivet_center2)
+        #print("Rivet_center2", Rivet_center2)
 
 
     except IndexError:
@@ -1241,17 +1241,17 @@ def add_exception_area_cam3():
             if (0 <= abs(list_delete_item[i][0] - x) and abs(list_delete_item[i][0] - x) <= 5)\
                 and (0 <= abs(list_delete_item[i][1] - y) and abs(list_delete_item[i][1] - y) <= 5):
                 idx = i
-                print("idx", idx)
+                #print("idx", idx)
 
         cam3_box_idx = save_revet_center3.index([list_delete_item[idx][0], list_delete_item[idx][1]])
-        print("cam2_box_idx", cam3_box_idx)
+        #print("cam2_box_idx", cam3_box_idx)
 
-        print("delte item", list_delete_item)
+        #print("delte item", list_delete_item)
         cam3_box_list.append(save_revet_center3[cam3_box_idx])
         for i in range(len(list_delete_item)):
             Rivet_center3.remove([list_delete_item[i][0], list_delete_item[i][1]])
 
-        print(Rivet_center3)
+        #print(Rivet_center3)
 
     except IndexError:
         Start_except_box_cam3 = 0
@@ -1267,7 +1267,7 @@ def check_setting():
     global ser, port_num, protocol
     global HOST, PORT
 
-    print("pro, port : ", protocol, port_num)
+    #print("pro, port : ", protocol, port_num)
     if protocol == 1 and port_num != '':
         ser = serial.Serial(
             port=port_num,
@@ -1287,16 +1287,16 @@ def check_setting():
         check_set = False
         store_location_input = datapath.get()
 
-        print(HOST, PORT)
+        #print(HOST, PORT)
         set.destroy()
 
         if store_location_input != '':
             parsing = store_location_input.split('/')
-            print(parsing)
+            #print(parsing)
             for i in range(len(parsing)):
                 if parsing[i] != '':
                     pathname += parsing[i] + '/'
-                    print(pathname)
+                    #print(pathname)
                 elif parsing[i] == '/':
                     break
                 if i != 0:
@@ -1310,7 +1310,7 @@ def affiche(com_port):
 
     port_num = com_port
 
-    print(port_num)
+    #print(port_num)
 
 def select_RS_232():
     global protocol, check_protocol, set
@@ -1351,7 +1351,7 @@ def select_RS_232():
     list_box = OptionMenu(set, variable, *choices, command=affiche)
     list_box.place(x=screen_width * (265 / tk_width), y=screen_height * (445 / tk_height), relx=0.01, rely=0.01)
 
-    print("통신방식 : RS-232 ")
+    #print("통신방식 : RS-232 ")
 
 def select_TCP_IP():
     global protocol, check_protocol, set
@@ -1390,7 +1390,7 @@ def select_TCP_IP():
                   width=int(screen_width * (14 / tk_width)), height=int(screen_height * (2 / tk_height)), bd=3, padx=2,pady=2, command=select_TCP_IP)
     TI_B.place(x=screen_width * (135 / tk_width), y=screen_height * (440 / tk_height))
 
-    print("통신방식 : TCP/IP")
+    #print("통신방식 : TCP/IP")
 
 def setting_window():
     global datapath, set
@@ -1500,8 +1500,8 @@ def setting_window():
 def mouse_position(event):
     global EB1_X, EB1_Y, EB1_W, EB1_H, EB2_X, EB2_Y, EB2_W, EB2_H, EB3_X, EB3_Y, EB3_W, EB3_H
 
-    print("===== 마우스 포지션 출력 =====")
-    print("click - ", event.x, event.y)
+    #print("===== 마우스 포지션 출력 =====")
+    #print("click - ", event.x, event.y)
 
     EB1_X.insert(20, event.x)
     EB1_Y.insert(20, event.y)
@@ -1602,4 +1602,3 @@ if __name__=="__main__":
     cap3.release()
     cap4.release()
     cv2.destroyAllWindows()
-
