@@ -60,6 +60,7 @@ PLC_sensor = False
 check_set = True
 check_detect = True
 check_PLC_sensor = 0
+check_result_label = False
 
 check_year = 0
 check_month = 0
@@ -318,16 +319,17 @@ def read_frame():
     global position
     global HOST, PORT, PLC_rx, PLC_tx_OK, PLC_tx_NG
     global ser, sock, protocol, port_num, set
+    global check_result_label, result_label, image_label
 
     screen_width = root.winfo_screenwidth()
     screen_height = root.winfo_screenheight()
     tk_width, tk_height = 1920, 1080
 
-    '''
+
     webCamShow(cap1.read(), cam1_label, 1)
     webCamShow(cap2.read(), cam2_label, 2)
     webCamShow(cap3.read(), cam3_label, 3)
-    '''
+
 
     if check_set == False:
         if Serial_No != pre_Serial_No:
@@ -352,8 +354,9 @@ def read_frame():
             image_reformat = Reformat_Image(image)
             check_PLC_sensor = 1
 
-        if protocol != 0:
+        if check_result_label == True and Serial_No !='':
             result_label.destroy()
+            check_result_label = False
 
         if check_PLC_sensor == 1:
             imageShow(image_reformat, image_label)
@@ -379,6 +382,7 @@ def read_frame():
 
             Serial_No = ''
             check_PLC_sensor = 0
+            check_result_label = True
             RV_SN.delete(0,END)
 
     root.after(10, read_frame)
@@ -1602,3 +1606,4 @@ if __name__=="__main__":
     cap3.release()
     cap4.release()
     cv2.destroyAllWindows()
+
