@@ -1,7 +1,5 @@
-
-
-
 # -*- coding: utf-8 -*-
+###################################### Generator 실행 ###########################################
 import os
 import psutil
 import random
@@ -12,7 +10,6 @@ majors = ['컴퓨터 공학', '국문학', '영문학', '수학', '정치']
 
 process = psutil.Process(os.getpid())
 mem_before = process.memory_info().rss / 1024 / 1024
-
 
 def people_list(num_people):
     result = []
@@ -45,7 +42,7 @@ print('시작 전 메모리 사용량: {} MB'.format(mem_before))
 print('종료 후 메모리 사용량: {} MB'.format(mem_after))
 print('총 소요된 시간: {:.6f} 초'.format(total_time))
 
-############################
+################################################# for 루프 실행 ######################################
 
 #-*- coding: utf-8 -*-
 import os
@@ -59,7 +56,6 @@ majors = ['컴퓨터 공학', '국문학', '영문학', '수학', '정치']
 process = psutil.Process(os.getpid())
 mem_before = process.memory_info().rss / 1024 / 1024
 
-######################################################## for 루프 append
 def people_list(num_people):
     result = []
     for i in range(num_people):
@@ -70,9 +66,7 @@ def people_list(num_people):
         }
         result.append(person)
     return result
-#########################################################
 
-#*******************************************************# Generator 루프
 def people_generator(num_people):
     for i in range(num_people):
         person = {
@@ -81,7 +75,6 @@ def people_generator(num_people):
             'major': random.choice(majors)
         }
         yield person
-#********************************************************#
 
 t1 = time.clock()
 people = people_list(1000000)  #1 people_list를 호출 사람 100만명의 리스트
