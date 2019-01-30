@@ -59,7 +59,7 @@ majors = ['컴퓨터 공학', '국문학', '영문학', '수학', '정치']
 process = psutil.Process(os.getpid())
 mem_before = process.memory_info().rss / 1024 / 1024
 
-
+######################################################## for 루프 append
 def people_list(num_people):
     result = []
     for i in range(num_people):
@@ -70,8 +70,9 @@ def people_list(num_people):
         }
         result.append(person)
     return result
+#########################################################
 
-
+#*******************************************************# Generator 루프
 def people_generator(num_people):
     for i in range(num_people):
         person = {
@@ -80,6 +81,7 @@ def people_generator(num_people):
             'major': random.choice(majors)
         }
         yield person
+#********************************************************#
 
 t1 = time.clock()
 people = people_list(1000000)  #1 people_list를 호출 사람 100만명의 리스트
