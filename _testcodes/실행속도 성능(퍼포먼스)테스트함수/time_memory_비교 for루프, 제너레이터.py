@@ -11,16 +11,16 @@ majors = ['컴퓨터 공학', '국문학', '영문학', '수학', '정치']
 process = psutil.Process(os.getpid())
 mem_before = process.memory_info().rss / 1024 / 1024
 
-def people_list(num_people):
-    result = []
-    for i in xrange(num_people):
-        person = {
-            'id': i,
-            'name': random.choice(names),
-            'major': random.choice(majors)
-        }
-        result.append(person)
-    return result
+# def people_list(num_people):
+#     result = []
+#     for i in xrange(num_people):
+#         person = {
+#             'id': i,
+#             'name': random.choice(names),
+#             'major': random.choice(majors)
+#         }
+#         result.append(person)
+#     return result
 
 
 def people_generator(num_people):
@@ -33,7 +33,7 @@ def people_generator(num_people):
         yield person
 
 t1 = time.clock()
-people = people_generator(1000000)  #1 people_generator를 호출
+people = people_generator(1000000)  # <== people_generator를 호출
 t2 = time.clock()
 mem_after = process.memory_info().rss / 1024 / 1024
 total_time = t2 - t1
@@ -67,17 +67,17 @@ def people_list(num_people):
         result.append(person)
     return result
 
-def people_generator(num_people):
-    for i in range(num_people):
-        person = {
-            'id': i,
-            'name': random.choice(names),
-            'major': random.choice(majors)
-        }
-        yield person
+# def people_generator(num_people):
+#     for i in range(num_people):
+#         person = {
+#             'id': i,
+#             'name': random.choice(names),
+#             'major': random.choice(majors)
+#         }
+#         yield person
 
 t1 = time.clock()
-people = people_list(1000000)  #1 people_list를 호출 사람 100만명의 리스트
+people = people_list(1000000)  # 2 people_list를 호출 사람 100만명의 리스트
 t2 = time.clock()
 mem_after = process.memory_info().rss / 1024 / 1024
 total_time = t2 - t1
