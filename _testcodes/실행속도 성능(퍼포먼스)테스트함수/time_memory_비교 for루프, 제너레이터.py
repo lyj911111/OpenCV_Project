@@ -2,7 +2,6 @@
 
 
 # -*- coding: utf-8 -*-
-from __future__ import division
 import os
 import psutil
 import random
@@ -49,7 +48,6 @@ print('총 소요된 시간: {:.6f} 초'.format(total_time))
 ############################
 
 #-*- coding: utf-8 -*-
-from __future__ import division
 import os
 import psutil
 import random
