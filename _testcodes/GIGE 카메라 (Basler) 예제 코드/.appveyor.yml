@@ -1,0 +1,68 @@
+environment:
+  TWINE_USERNAME: basler
+  #Enable this for testing purposes
+  #TWINE_REPOSITORY_URL: https://test.pypi.org/legacy/
+  TWINE_PASSWORD:
+    #test.pypi password
+    #secure: qtg34Wv7b/cdAuvvAnqDZA==
+    #pypi passwd
+    secure: pLJjpvmtL1FeCwdEWzqH1hHBsNvJTa7nxkj4lhVEKVY=
+
+  matrix:
+    # For Python versions available on Appveyor, see
+    # http://www.appveyor.com/docs/installed-software#python
+    # The list here is complete (excluding Python 2.6, which
+    # isn't covered by this document) at the time of writing.
+
+    - PYTHON: "C:\\Python27"
+    - PYTHON: "C:\\Python27-x64"
+    - PYTHON: "C:\\Python33"
+    - PYTHON: "C:\\Python33-x64"
+      DISTUTILS_USE_SDK: "1"
+    - PYTHON: "C:\\Python34"
+    - PYTHON: "C:\\Python34-x64"
+      DISTUTILS_USE_SDK: "1"
+    - PYTHON: "C:\\Python35"
+    - PYTHON: "C:\\Python35-x64"
+    - PYTHON: "C:\\Python36"
+    - PYTHON: "C:\\Python36-x64"
+
+install:
+  # We need wheel installed to build wheels
+  - "%PYTHON%\\python.exe -m pip install wheel twine"
+  # install swig and put it on the path. Retry because of network issues with sourceforge
+  - appveyor-retry curl -sSfL -o swigwin.zip https://prdownloads.sourceforge.net/swig/swigwin-3.0.12.zip
+  - 7z x swigwin.zip -oC:\ > NUL
+  - set PATH=C:\swigwin-3.0.12;%PATH%
+  # install pylon
+  - appveyor-retry curl -sSfL -o pylon_installer.exe %PYLON_INSTALLER_URL%
+  - pylon_installer.exe /quiet /install
+  # PYLON_DEV_DIR is not available in the shell after installation, so we set it manually
+  - set PYLON_DEV_DIR=%PROGRAMFILES%\Basler\pylon 5\development
+
+build_script:
+  - "scripts\\build\\msvc_build_wrapper.cmd %PYTHON%\\python.exe setup.py bdist_wheel"
+
+test_script:
+# Unit Tests fail to run on python 2.7
+#  - "%PYTHON%\\python.exe -m pip install numpy"
+#  - "scripts\\build\\msvc_build_wrapper.cmd %PYTHON%\\python.exe setup.py test"
+
+artifacts:
+  - path: dist\*
+
+deploy:
+  #release: pypylon-$(appveyor_build_version)
+  provider: GitHub
+  auth_token:
+    secure: j8A/M6GD82ZXpIqm6OhRj1nxQ52/DncI074LXnkBhGFQxPQTt6Hc4ABIfdJ37sIX
+  artifact: /.*\.whl/
+  force_update: true
+  on:
+    appveyor_repo_tag: true        # deploy on tag push only
+
+#use after_deploy instead of deploy_script as deploy_script disables the default deployment providers
+after_deploy:
+  - echo "Starting Artifact Deployment"
+  - ps: If ($env:APPVEYOR_REPO_TAG -eq "true") { Invoke-Expression "$env:PYTHON\\Scripts\\twine upload --skip-existing dist/*" 2>$null } Else { write-output "Not on a tag, won't deploy to pypi"}
+  - echo "Finished Artifact Deployment"
