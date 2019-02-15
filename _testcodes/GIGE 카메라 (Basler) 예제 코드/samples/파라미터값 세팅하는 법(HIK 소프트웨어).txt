@@ -1,0 +1,10 @@
+HIK 소프트웨어 다운로드.
+
+Basler ace 컬러카메라
+
+Parameter:
+	> Analog Controls 	    : Gain (raw)[밝기 컨트롤)
+	> Acqusition Controls : Exposure time (raw) [전체적 밝기 컨트롤]
+			      Gain Auto [continous] [자동으로 밝기 ] 
+	> Color Improvement : Balance White Auto [자동으로 최적의 색상 조절 컨트롤]
+	> Image Format Controls : Mono 8 [ Color를 Gray 색상으로 변경시킴 ]
