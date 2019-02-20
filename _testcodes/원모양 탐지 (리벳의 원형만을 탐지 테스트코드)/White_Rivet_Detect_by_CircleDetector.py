@@ -17,7 +17,7 @@ def houghCircle():
 
     # param1 = 250, param2 = 20
                                  # 원본과 비율 / 찾은 원들간의 최소 중심거리 / param1, param2를 조절해 원을 찾음
-    circles = cv2.HoughCircles(imgray, cv2.HOUGH_GRADIENT, 1, 10, param1=250, param2=20, minRadius=5, maxRadius=10)
+    circles = cv2.HoughCircles(imgray, cv2.HOUGH_GRADIENT, 1, 10, param1=250, param2=20, minRadius=5, maxRadius=8)
 
     if circles is not None:
         circles = np.uint16(np.around(circles))
