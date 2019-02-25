@@ -7,11 +7,11 @@ import numpy as np
 import cv2
 
 # Load the left and right images in gray scale
-imgLeft = cv2.imread('./imL.png', 0)
-imgRight = cv2.imread('./imR.png', 0)
+imgLeft = cv2.imread('./33.png', 0)
+imgRight = cv2.imread('./44.png', 0)
 
 # Initialize the stereo block matching object
-stereo = cv2.StereoBM_create(numDisparities=32, blockSize=19)
+stereo = cv2.StereoBM_create(numDisparities=92, blockSize=19)   # 사진 11,22 는 parameter: 32,19
 
 # Compute the disparity image
 disparity = stereo.compute(imgLeft, imgRight)
