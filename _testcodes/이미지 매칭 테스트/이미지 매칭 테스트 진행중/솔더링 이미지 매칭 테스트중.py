@@ -2,8 +2,6 @@ import cv2
 import numpy as np
 from matplotlib import pyplot as plt
 
-
-
 # 검출할 영역(관심영역)을 지정 (start point to end point of Rectangle Box).
 s_pt = (500, 30)
 e_pt = (900, 900)
@@ -80,11 +78,11 @@ def execute():
             cnt_list = []
 
         if (pt[0] > s_pt[0] and pt[1] > s_pt[1]) and (
-                (pt[0] + w1 < e_pt[0]) and (pt[1] + h1 < e_pt[1])):  # 관심영역(ROI)으로 판독 제한.
+                (pt[0] + w2 < e_pt[0]) and (pt[1] + h2 < e_pt[1])):  # 관심영역(ROI)으로 판독 제한.
 
             cnt = cnt + 1  # 매칭률에 따라 얼마나 매칭시켰는지 갯수를 셈.
 
-            cv2.rectangle(result, pt, (pt[0] + w1, pt[1] + h1), (0, 255, 0), 1)  # 판독위치 마킹.
+            cv2.rectangle(result, pt, (pt[0] + w2, pt[1] + h2), (0, 255, 0), 1)  # 판독위치 마킹.
             cnt_list.append(cnt)
             max_cnt = str(max(cnt_list))  # 판독 갯수 중 최대값 저장.
 
