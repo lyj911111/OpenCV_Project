@@ -2,15 +2,14 @@ import cv2
 import numpy as np
 from matplotlib import pyplot as plt
 
-# before_point (이전좌표)
-bfr_pt = 0
+
 
 # 검출할 영역(관심영역)을 지정 (start point to end point of Rectangle Box).
 s_pt = (500, 30)
 e_pt = (900, 900)
 
-# 확률이 떨어지는 이하 매칭률을 제외
-# min = 0
+# before_point (이전좌표)
+bfr_pt = 0
 
 # 메인실행 함수.
 def execute():
@@ -21,8 +20,9 @@ def execute():
     img_gray = cv2.cvtColor(img_rgb, cv2.COLOR_BGR2GRAY)  # gray로 변환.
     result = img_rgb.copy()                               # 결과출력을 위한 원본 복사
 
-    # 관심영역 지정.
+    # 관심영역(ROI, Range of Interest) 지정.
     result = cv2.rectangle(result, s_pt, e_pt, (255, 0, 0), 2)
+    cv2.putText(result, 'ROI', s_pt, cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2, cv2.LINE_AA)
 
     # 이미지 매칭할 template 불러옴. (2개의 template으로 이미지 매칭)
     template1 = cv2.imread('template1.jpg',0)
@@ -64,8 +64,6 @@ def execute():
                     cnt = 0
             bfr_pt = pt
     cv2.putText(result, 'match:' + max_cnt, bfr_pt, cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 0), 1, cv2.LINE_AA)
-
-
 
 
     # 2번째 template 매칭.
