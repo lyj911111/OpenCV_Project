@@ -6,12 +6,13 @@ from matplotlib import pyplot as plt
 s_pt = (500, 30)
 e_pt = (900, 900)
 
-# before_point (이전좌표)
+# before_point (이전좌표를 저장하기 위함)
 bfr_pt = 0
+max_cnt = 0
 
 # 메인실행 함수.
 def execute():
-    global bfr_pt
+    global bfr_pt, max_cnt
 
     # 원본 불러오기.
     img_rgb = cv2.imread('2.png')
@@ -32,13 +33,14 @@ def execute():
     w2, h2 = template2.shape[::-1]
 
 
-    # 1번째 template 매칭.
+    ## 1번째 template 매칭.
     res1 = cv2.matchTemplate(img_gray,template1,cv2.TM_CCOEFF_NORMED)
     # 이미지 매칭률을 결정함.
-    threshold = 0.7
+    threshold = 0.8
     loc = np.where(res1 >= threshold)
 
     cnt = 0
+    max_cnt = 0
     cnt_list = []
     for pt in zip(*loc[::-1]):
 
@@ -51,18 +53,26 @@ def execute():
 
             cv2.rectangle(result, pt, (pt[0] + w1, pt[1] + h1), (255, 255, 0), 1)     # 판독위치 마킹.
             cnt_list.append(cnt)
-            max_cnt = str(max(cnt_list))        # 판독 갯수 중 최대값 저장.
+            max_cnt = max(cnt_list)        # 판독 갯수 중 최대값 저장.
+            str_cnt = str(max_cnt)         # string 으로 변환
 
-            # 초기에 before_point가 없으므로 있을경우에 if문 진입.
+            # 초기에 before_point가 없으므로, 있을경우에 if문 진입.
             if bfr_pt:
 
-                # y좌표가 급격히 변하는 부분일때.
+                # x, y 좌표가 급격히 변하는 부분일때.
                 if (abs(bfr_pt[1] - pt[1]) > 10) or (abs(bfr_pt[0] - pt[0]) > 10) :
-                    cv2.putText(result, 'match:' + max_cnt, bfr_pt, cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 0), 1, cv2.LINE_AA)
-                    cnt = 0
-            bfr_pt = pt
-    cv2.putText(result, 'match:' + max_cnt, bfr_pt, cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 0), 1, cv2.LINE_AA)
+                    cv2.putText(result, 'match:' + str_cnt, bfr_pt, cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 0), 1, cv2.LINE_AA)
+                    cnt = 0     # 갯수를 다시 초기화
+            bfr_pt = pt         # 이전 좌표값 저장.
+    # 맨 마지막 좌표 match 출력을 위한 조건문.
+    if max_cnt:
+        str_cnt = str(max_cnt)
+        cv2.putText(result, 'match:' + str_cnt, bfr_pt, cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 0), 1, cv2.LINE_AA)
+    else:
+        print('no matched with template 1')  # 아무것도 match 되지 않았을 때
 
+
+    print(max_cnt)
 
     # 2번째 template 매칭.
     res2 = cv2.matchTemplate(img_gray,template2,cv2.TM_CCOEFF_NORMED)
@@ -71,30 +81,38 @@ def execute():
     loc = np.where(res2 >= threshold)
 
     cnt = 0
+    max_cnt = 0
     cnt_list = []
     for pt in zip(*loc[::-1]):
 
         if cnt == 0:
             cnt_list = []
 
-        if (pt[0] > s_pt[0] and pt[1] > s_pt[1]) and (
-                (pt[0] + w2 < e_pt[0]) and (pt[1] + h2 < e_pt[1])):  # 관심영역(ROI)으로 판독 제한.
+        if (pt[0] > s_pt[0] and pt[1] > s_pt[1]) and ((pt[0] + w2 < e_pt[0]) and (pt[1] + h2 < e_pt[1])):  # 관심영역(ROI)으로 판독 제한.
 
             cnt = cnt + 1  # 매칭률에 따라 얼마나 매칭시켰는지 갯수를 셈.
 
             cv2.rectangle(result, pt, (pt[0] + w2, pt[1] + h2), (0, 255, 0), 1)  # 판독위치 마킹.
             cnt_list.append(cnt)
-            max_cnt = str(max(cnt_list))  # 판독 갯수 중 최대값 저장.
+            max_cnt = max(cnt_list)  # 판독 갯수 중 최대값 저장.
+            str_cnt = str(max_cnt)   # string 으로 변환
 
             # 초기에 before_point가 없으므로 있을경우에 if문 진입.
             if bfr_pt:
 
-                # y좌표가 급격히 변하는 부분일때.
+                # x, y 좌표가 급격히 변하는 부분일때.
                 if (abs(bfr_pt[1] - pt[1]) > 10) or (abs(bfr_pt[0] - pt[0]) > 10):
-                    cv2.putText(result, 'match:' + max_cnt, bfr_pt, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 1, cv2.LINE_AA)
+                    cv2.putText(result, 'match:' + str_cnt, bfr_pt, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 1, cv2.LINE_AA)
                     cnt = 0
             bfr_pt = pt
-    cv2.putText(result, 'match:' + max_cnt, bfr_pt, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 1, cv2.LINE_AA)
+    if max_cnt:
+        str_cnt = str(max_cnt)
+        cv2.putText(result, 'match:' + str_cnt, bfr_pt, cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 1, cv2.LINE_AA)
+    else:
+        print('no matched with template 2')
+
+
+    print(max_cnt)
 
     cv2.imshow('res.png',result)
     cv2.waitKey(0)
