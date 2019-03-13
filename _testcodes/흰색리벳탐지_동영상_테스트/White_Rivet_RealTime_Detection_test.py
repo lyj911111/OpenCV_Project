@@ -5,22 +5,18 @@ import datetime
 from PIL import Image
 import numpy as np
 
-# 시리얼 통신.
-# NANOserial = serial.Serial(
-#     port='COM3',\
-#     baudrate=115200,\
-#     parity=serial.PARITY_NONE,\
-#     stopbits=serial.STOPBITS_ONE,\
-#     bytesize=serial.EIGHTBITS,\
-#     timeout=0)
+# 2대의 카메라 해상도 설정 및 출력.
+cap0 = cv2.VideoCapture(0)
+cap0.set(cv2.CAP_PROP_FRAME_WIDTH, 1280) # Width 4608
+cap0.set(cv2.CAP_PROP_FRAME_HEIGHT, 960) # Height 3288
+print("첫번째 카메라 현재 해상도 %d x %d" %(cap0.get(3), cap0.get(4)))
 
-# NG출력 폰트, 문자크기, 두께 설정.
-font = cv2.FONT_HERSHEY_COMPLEX  # normal size sans-serif font
-fontScale = 5
-thickness = 4
-
-# 사용할 카메라 설정.
 cap = cv2.VideoCapture(1)
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, 4608) # Width 4608
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 3288) # Height 3288
+print("두번째 카메라 현재 해상도 %d x %d" %(cap.get(3), cap.get(4)))
+
+# 트렉바 창 이름.
 cv2.namedWindow("Trackbars", cv2.WINDOW_NORMAL)
 
 # 플레그, 초기값
@@ -63,7 +59,7 @@ cv2.createTrackbar("rank", "Trackbars", 0, 10, nothing)
 while True:
 
     _, frame = cap.read()
-
+    frame = cv2.resize(frame, (1280, 960), interpolation=cv2.INTER_LINEAR)	# 화면에 맞는 해상도로 조절.
     # col,row,_ = frame.shape # frame 화면크기 출력, (y ,x) = (480x640)
     # print(col,row)
     frame2 = frame.copy() # 영상원본
@@ -164,7 +160,7 @@ while True:
     _, contours, _ = cv2.findContours(final_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)  # 컨투어 찾기
     if len(contours) != 0:
         for contour in contours:
-            if (cv2.contourArea(contour) > 30) and (cv2.contourArea(contour) < 500):  # **필요한 면적을 찾아 중심점 표시
+            if (cv2.contourArea(contour) > 300) and (cv2.contourArea(contour) < 500):  # **필요한 면적을 찾아 중심점 표시
                 ball_area = cv2.contourArea(contour)
                 mom = contour
                 M = cv2.moments(mom)
