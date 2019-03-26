@@ -1,0 +1,11 @@
+--upgrade pip
+numpy==1.15.4
+imutils==0.5.2
+opencv-python==3.4.4.19
+more_itertools==4.3.0
+image==1.5.27
+pylibdmtx==0.1.7
+pyzbar==0.1.7
+pyserial==3.4
+decord==0.5.1
+cx-Freeze
