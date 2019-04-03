@@ -40,9 +40,8 @@ def execute():
 
     global flag
 
-        # 이미지 불러오기
-    img = cv2.imread('product.bmp')
-    #img = cv2.resize(img, (1280, 960))
+    # 이미지 불러오기
+    img = cv2.imread('product30.bmp')
 
     # Blur 필터링 테스트 ###################
     #img = cv2.blur(img, (4, 4))
@@ -51,13 +50,6 @@ def execute():
 
     #img = cv2.bilateralFilter(img,9,75,75)
 
-    #########################################
-    # cv2.imshow('a', imga)
-    # cv2.imshow('b', imgb)
-    # cv2.imshow('c', imgc)
-    # cv2.imshow('d', imgd)
-
-    #img = cv2.imread('ko.jpg', cv2.IMREAD_UNCHANGED)
     cv2.namedWindow("Trackbars", cv2.WINDOW_NORMAL)
 
     # create trackbars for color change
@@ -215,9 +207,6 @@ def execute():
 
         result = cv2.bitwise_and(frame2, frame2, mask=final_mask)
 
-        edges = cv2.Canny(final_mask, 10, 100, apertureSize=3)
-        edges = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, edge_kernel)
-        edges = cv2.dilate(edges, kernel, iterations=3)
         #ret, th1 = cv2.threshold(final_mask, 70, 255, cv2.THRESH_BINARY)
 
         #################### 중심좌표값 자동 저장용 ##########################
@@ -225,8 +214,7 @@ def execute():
         # 관심영역(ROI, Range of Interest) 지정.
         for i in range(len(ROI_list)):
             img = cv2.rectangle(img, ROI_list[i][0], ROI_list[i][1], (150, 50, 150), 15)
-            cv2.putText(img, 'ROI%d' % (i + 1), (ROI_list[i][0][0], ROI_list[i][0][1] - 3), cv2.FONT_HERSHEY_SIMPLEX, 3,
-                        (0, 0, 255), 5, cv2.LINE_AA)
+            cv2.putText(img, 'ROI%d' % (i + 1), (ROI_list[i][0][0], ROI_list[i][0][1] - 3), cv2.FONT_HERSHEY_SIMPLEX, 3, (0, 0, 255), 5, cv2.LINE_AA)
 
         pt_list = []
         right_mid_list = []
@@ -236,10 +224,10 @@ def execute():
         square_center = []
         _, contours, _ = cv2.findContours(final_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)  # 컨투어 찾기
 
-
+        # 컨투어가 있을때
         if len(contours) != 0:
             for contour in contours:
-                if (cv2.contourArea(contour) > 5000) and (cv2.contourArea(contour) < 80000):  # **필요한 면적을 찾아 중심점 좌표를 저장
+                if (cv2.contourArea(contour) > 5000) and (cv2.contourArea(contour) < 80000):  # 필요한 면적 제한
 
                     # 컨투어에서 사각형당 꼭지점을 찾기 위해 x,y값의 최소값을 구함.
                     # if len(contour) != 0:
@@ -253,16 +241,14 @@ def execute():
                     cx_origin = int(M['m10'] / M['m00'])
                     cy_origin = int(M['m01'] / M['m00'])
 
-                    # 외곽선 근사화 시키기 (사각형의 형상을 얻기 위해)
+                    # 외곽선 근사화 시키기 (사각형의 형상을 얻기 위해), epsilon값에 따라 근사 민감도 결정.
                     epsilon = 0.03 * cv2.arcLength(mom, True)
                     approx = cv2.approxPolyDP(mom, epsilon, True)
 
                     # print("근사시킨 꼭지점", approx)
                     # print("approx 갯수", len(approx))
 
-                    #cv2.putText(img, 'num: %d' % (cnt), (cx_origin, cy_origin - 3), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 255), 2, cv2.LINE_AA)
-
-
+                    # 관심영역 내에서 판독
                     for i in range(len(ROI_list)):
                         if (cx_origin > ROI_list[i][0][0] and cy_origin > ROI_list[i][0][1]) and (cx_origin < ROI_list[i][1][0] and cy_origin < ROI_list[i][1][1]):
 
@@ -270,15 +256,15 @@ def execute():
                             #cv2.drawContours(img, [mom], 0, (0, 255, 0), 5) # 실제 컨투어를 그림.
                             cv2.circle(img, (cx_origin, cy_origin), 15, (0, 255, 255), -1)  # 중심 좌표 표시
 
-
+                            # 근사화 시킨 형상중 사각형만 고름.
                             if len(approx) != 0:
                                 if len(approx) == 4:
                                     # midp = cal.midpoint(approx[0][0][0], approx[0][0][1], approx[3][0][0], approx[3][0][1])
                                     for i in range(len(approx)):
-                                        minx_contour.append(approx[i][0][0])  # x좌표에 대한 최소값을 찾기 위해. 리스트에 추가
-                                        miny_contour.append(approx[i][0][1])  # y좌표에 대한 최소값을 찾기 위함.
+                                        minx_contour.append(approx[i][0][0])  # x좌표에 대한 꼭지점 좌표. 리스트에 추가
+                                        miny_contour.append(approx[i][0][1])  # y좌표에 대한 꼭지점 좌표. 리스트에 추가
                                         cv2.circle(img, (approx[i][0][0], approx[i][0][1]), 10, (0, 0, 255), -1)  # 근사화 사각에서의 꼭지점 표시
-                                        # 왼쪽 오른쪽 중심부를 찾기 위한 선행작업.
+                                        # 중심점의 x좌표를 기준으로 왼쪽과 오른쪽으로 나누어 왼쪽, 오른쪽 리스트에 추가(꼭지점의 중점을 계산하기 위한 선행작업)
                                         pt_list.append(tuple((minx_contour[i], miny_contour[i])))
                                         if pt_list[i][0] < cx_origin:
                                             left_mid_list.append(pt_list[i])
@@ -293,8 +279,6 @@ def execute():
                                     print("y리스트:", miny_contour)
                                     print("중심점 x값:", cx_origin)
 
-
-
                                     # for i in range(len(approx)):
                                     #     pt_list.append(tuple((minx_contour[i], miny_contour[i])))
                                     #     if pt_list[i][0] < cx_origin:
@@ -305,17 +289,19 @@ def execute():
                                     # print("왼쪽좌표****", left_mid_list)
                                     # print("오른쪽좌표****", right_mid_list)
 
-
                                     cal = calulateCoordinate()  # 계산 클래스 객체 할당.
 
+                                    # 왼쪽 오른쪽의 중심점을 반환
                                     left_midpt = cal.midpoint(left_mid_list[0][0], left_mid_list[0][1], left_mid_list[1][0], left_mid_list[1][1])
                                     right_midpt = cal.midpoint(right_mid_list[0][0], right_mid_list[0][1], right_mid_list[1][0], right_mid_list[1][1])
-                                    print("미드포인터값", left_midpt, right_midpt)
+                                    print("왼쪽, 오른쪽 미드 중심점값", left_midpt, right_midpt)
 
+                                    # 왼쪽 오른쪽 중심점을 찍고 선으로 이어줌.
                                     cv2.circle(img, left_midpt, 15, (255, 255, 255),-1)  # 근사화 시킨 사각형의 꼭지점 출력
                                     cv2.circle(img, right_midpt, 15, (255, 255, 255), -1)  # 근사화 시킨 사각형의 꼭지점 출력
                                     cv2.line(img, left_midpt, right_midpt, (255, 255, 255), 3)  # 사각형의 중심점을 선분으로 이음.
 
+                                    # 중심선분의 길이값 구함. 직각삼각형을 만들어 밑변, 높이를 이용해 tan 삼각함수로 각도 계산
                                     midDistance = cal.distance(left_midpt[0], left_midpt[1], right_midpt[0], right_midpt[1])
                                     baseline = cal.distance(left_midpt[0], left_midpt[1], right_midpt[0], left_midpt[1])
                                     height = cal.distance(right_midpt[0], right_midpt[1], right_midpt[0], left_midpt[1])
@@ -326,14 +312,18 @@ def execute():
                                     print("밑변 값:", baseline)
                                     print("높이 값:", height)
                                     print("***각도값:", angle)
-                                    cv2.putText(img, 'angle: %.2f' % (round(angle,2)), (cx_origin-35, cy_origin - 25), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 255), 5, cv2.LINE_AA)
 
+                                    # 각도가 2.2도 이상 틀어지면 불합격, 그 이하 합격
+                                    if angle > 2.2:
+                                        cv2.putText(img, 'angle: %.2f NG' % (round(angle, 2)), (cx_origin - 35, cy_origin - 25), cv2.FONT_HERSHEY_SIMPLEX, 2,(0, 0, 255), 5, cv2.LINE_AA)
+                                    else:
+                                        cv2.putText(img, 'angle: %.2f' % (round(angle,2)), (cx_origin-35, cy_origin - 25), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 255), 5, cv2.LINE_AA)
                             else:
                                 print("사각형이 아닙니다.")
 
                             square_center.append([cx_origin, cy_origin])
 
-                    # 꼭지점 리스트를 비워줌
+                    # 리스트를 비워줌 반복
                     minx_contour = []
                     miny_contour = []
 
