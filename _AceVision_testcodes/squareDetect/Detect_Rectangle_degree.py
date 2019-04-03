@@ -34,11 +34,11 @@ cnt = 0
 
 # 관심영역 ROI 지정.
 ROI_list = [
-    [(500, 560), (4100, 2700)]  # 첫번째 관심영역 (start_pt, end_pt) 30 200 1200 500
+    [(500, 150), (4100, 3200)]  # 첫번째 관심영역 (start_pt, end_pt) 30 200 1200 500
 ]
 
     # 이미지 불러오기
-img = cv2.imread('product45.bmp')
+img = cv2.imread('product.bmp')
 #img = cv2.resize(img, (1280, 960))
 
 # Blur 필터링 테스트 ###################
@@ -205,6 +205,10 @@ while(1):
 
     final_mask = cv2.erode(final_mask, kernel, iterations=10)   # 사각형의 크기를 결정.
 
+    # 맨 위와 아래 오검출을 제거하기 위해 흰색으로 마스크.
+    final_mask = cv2.rectangle(final_mask, (500, 110), (4120, 220), (255, 255, 255), -1)
+    final_mask = cv2.rectangle(final_mask, (500, 3045), (4120, 3110), (255, 255, 255), -1)
+
     result = cv2.bitwise_and(frame2, frame2, mask=final_mask)
 
     edges = cv2.Canny(final_mask, 10, 100, apertureSize=3)
@@ -232,7 +236,6 @@ while(1):
     if len(contours) != 0:
         for contour in contours:
             if (cv2.contourArea(contour) > 5000) and (cv2.contourArea(contour) < 80000):  # **필요한 면적을 찾아 중심점 좌표를 저장
-
 
                 # 컨투어에서 사각형당 꼭지점을 찾기 위해 x,y값의 최소값을 구함.
                 # if len(contour) != 0:
@@ -319,7 +322,7 @@ while(1):
                                 print("밑변 값:", baseline)
                                 print("높이 값:", height)
                                 print("***각도값:", angle)
-                                cv2.putText(img, 'angle: %.2f' % (round(angle,2)), (cx_origin, cy_origin - 25), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 255), 5, cv2.LINE_AA)
+                                cv2.putText(img, 'angle: %.2f' % (round(angle,2)), (cx_origin-35, cy_origin - 25), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 255), 5, cv2.LINE_AA)
 
                         else:
                             print("사각형이 아닙니다.")
