@@ -1,10 +1,31 @@
 '''
     바코드의 손상 여부를 판단하기위해 검정색과 흰색의 히스토그램 분포도를 판독하여
     바코드 손상여부를 판단과 동시에 어느 부분이 문제가 있는지 마킹을 해줌.
+	손상된 부분의 치수값을 엑셀의 그래프로 추출하기 위해 값을 엑셀로저장 (옵션)
 '''
 
 import cv2 as cv
 import numpy as np
+
+'''
+    list 단위로 들어온 값을 col방향으로 엑셀에 저장.
+    엑셀로 중앙 히스토그램 분포 그래프를 보기 위함.
+'''
+import openpyxl     # 엑셀 라이브러리
+def writeExcel(list_value):
+    # 파일 쓰기 위한 객체 생성.
+    write_wb = openpyxl.Workbook()
+    write_ws = write_wb.active
+
+    # 엑셀에 값 쓰기
+    for i in range(0, len(list_value)):
+        string = list_value[i]
+        write_ws.cell(i+1, 1, i+1)          # 1번째 column - 인덱스값 x값
+        write_ws.cell(i+1, 2, string)       # 2번째 column - 치수값 y값
+
+    # 편집된 엑셀파일을 저장.
+    write_wb.save('./test.xlsx')
+
 
 '''
 원본 이미지에 마스크를 씌우고 그 부분에서의 밝기에 대한 histogram을 찾는 함수. (밝기에 대한 분포도)
@@ -87,6 +108,7 @@ cv.imshow('result', result)
 cv.waitKey(0)
 
 # 왼쪽에서부터 오른쪽으로 차례대로 스캔하면서 감.
+sum_mid_list = []
 histo_list = []
 mark_list = []
 sum_mid = 0
@@ -99,11 +121,15 @@ for j in range(0, scan_range - (x_coord + scan_width), scan_density):
 
     # 0 ~ 255 픽셀 히스토그램에서 77 ~ 116 구간 (회색이 가장 높은 구간)의 값을 모두 합함.
     histo_list = []
+
     for i in range(len(y)):
         print("y인덱스 %d : " %i, y[i][0])
         if i > 77 and i < 116:
             histo_list.append(y[i][0])
             sum_mid = sum(histo_list)       # 회색성분이 높은 구간의 합
+            sum_mid_list.append(sum_mid)
+
+    print("중앙합리스트", sum_mid_list)
 
     # 회색 성분의 합의 3000을 넘어갈때 바코드 손상으로 판단, (핵심 부분.)
     if sum_mid > 3000:
@@ -123,7 +149,10 @@ for j in range(0, scan_range - (x_coord + scan_width), scan_density):
 y, result = mask_histogram(gray, x_coord, y_coord, scan_range, y_coord + scan_height)
 result_copy = cv.cvtColor(result, cv.COLOR_GRAY2RGB)
 for i in range(len(mark_list)): # 마크된 원 표시
-    cv.circle(result_copy, (int(mark_list[i] + (scan_width / 2)), y_coord - 30), 10, (255, 0, 255), -1)
+    cv.circle(result_copy, (int(mark_list[i] + (scan_width / 2)), y_coord - 30), 5, (255, 0, 255), -1)
 cv.imshow('result', result_copy)
 
 cv.waitKey(0)
+
+# 중앙 분포도 값을 그래프로 보기위해 수치를 엑셀로 저장 (엑셀 그래프 확인용)
+writeExcel(sum_mid_list)
