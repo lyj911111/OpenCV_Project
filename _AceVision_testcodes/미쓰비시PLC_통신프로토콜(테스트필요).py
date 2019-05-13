@@ -31,17 +31,23 @@ class sendCommandToPLC:
         pass
 
     '''
-        PLC에게 Read신호 보냄.
+        PLC의 상태를 확인(Check)하기 위해 신호를 보냄.
     '''
-    def sendReady(self):
-        ready = chr(0x02)+chr(0x30)+chr(0x30)+chr(0x31)+chr(0x30)+chr(0x30)+chr(0x30)+chr(0x32)+chr(0x03)
-        print("보낸 신호", ready)
+    def ReadStatus(self):
+        status = chr(0x02) + chr(0x30) + chr(0x30) + chr(0x31) + chr(0x30) + chr(0x30) + chr(0x30) + chr(0x32) + chr(
+            0x03) + chr(0x35) + chr(0x36)
+        print("Status 보낸 신호", status)
 
         # 시리얼 전송
         if ser.readable():
-            ready = ready.encode()
-            ser.write(ready)
+            status = status.encode()
+            ser.write(status)
 
+        '''
+            받을 응답(이렇게 들어와야 함.)
+            1st Photo sensor detected : (hex) 02 30 30 32 30 03 43 35
+            Ready to Run              : (hex) 02 30 30 43 31 03 30 37
+        '''
         # 응답을 받음.
         respond = ser.readline()
         respond = respond.decode()
@@ -49,11 +55,11 @@ class sendCommandToPLC:
         return respond
 
     '''
-        PLC에게 OK신호 보냄.
+        비전 판독 후, PLC에게 OK신호 보냄.
     '''
     def sendOK(self):
         OK = chr(0x02)+chr(0x37)+chr(0x30)+chr(0x32)+chr(0x30)+chr(0x38)+chr(0x03)+chr(0x30)+chr(0x34)
-        print("보낸 신호", OK)
+        print("OK 보낸 신호", OK)
 
         # 시리얼 전송
         if ser.readable():
@@ -67,11 +73,11 @@ class sendCommandToPLC:
         return respond
 
     '''
-        PLC에게 NG신호 보냄.
+        비전 판독 후, PLC에게 NG신호 보냄.
     '''
     def sendNG(self):
-        NG = chr(0x02) + chr(0x37) + chr(0x30) + chr(0x33) + chr(0x30) + chr(0x38) + chr(0x03) + chr(0x30) + chr(0x34)
-        print("보낸 신호", NG)
+        NG = chr(0x02)+chr(0x37)+chr(0x30)+chr(0x33)+chr(0x30)+chr(0x38)+chr(0x03)+chr(0x30)+chr(0x35)
+        print("NG 보낸 신호", NG)
 
         # 시리얼 전송
         if ser.readable():
@@ -84,11 +90,32 @@ class sendCommandToPLC:
         print("받은 신호", respond)
         return respond
 
+    '''
+        바코드를 읽었다는 신호를 PLC에게 보냄 (Option)
+    '''
+    def IReadBarcode(self):
+        Readbarcode = chr(0x02)+chr(0x37)+chr(0x30)+chr(0x34)+chr(0x30)+chr(0x38)+chr(0x03)+chr(0x30)+chr(0x36)
+        print("Read Barcode 보낸 신호", Readbarcode)
+
+        # 시리얼 전송
+        if ser.readable():
+            Readbarcode = Readbarcode.encode()
+            ser.write(Readbarcode)
+
+        # 응답을 받음.
+        respond = ser.readline()
+        respond = respond.decode()
+        print("받은 신호", respond)
+        return respond
+
 
 if __name__=="__main__":
+
+    # 테스트 필요.
+
     a = sendCommandToPLC()  # 객체 할당.
 
-    Ready = a.sendReady()   # Ready 신호 보냄
+    status = a.ReadStatus()   # Ready 신호 보냄
     OK = a.sendOK()      # OK 신호 보냄
     NG = a.sendNG()      # NG 신호 보냄
-    print(Ready, OK, NG)    # 응답받은 리턴 값 출력 테스트.
+    print(status, OK, NG)    # 응답받은 리턴 값 출력 테스트.
