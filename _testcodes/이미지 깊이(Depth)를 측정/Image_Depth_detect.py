@@ -10,7 +10,7 @@ import cv2
 imgLeft = cv2.imread('./33.png', 0)
 imgRight = cv2.imread('./44.png', 0)
 
-# Initialize the stereo block matching object
+# Initialize the stereo block matching object / 변수 numDisparities : 16으로 나누어 떨어지는 수, 변수 blockSize: 홀수
 stereo = cv2.StereoBM_create(numDisparities=92, blockSize=19)   # 사진 11,22 는 parameter: 32,19
 
 # Compute the disparity image
