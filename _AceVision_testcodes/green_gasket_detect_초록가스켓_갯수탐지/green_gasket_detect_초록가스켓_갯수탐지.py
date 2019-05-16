@@ -6,16 +6,19 @@ def nothing(x):
 
 # 트렉바 생성
 cv2.namedWindow('trackbarwindow')
-cv2.createTrackbar('Lower_R', 'trackbarwindow', 30, 255, nothing)
-cv2.createTrackbar('Lower_G', 'trackbarwindow', 25, 255, nothing)
-cv2.createTrackbar('Lower_B', 'trackbarwindow', 76, 255, nothing)
-cv2.createTrackbar('Upper_R', 'trackbarwindow', 100, 255, nothing)
-cv2.createTrackbar('Upper_G', 'trackbarwindow', 255, 255, nothing)
-cv2.createTrackbar('Upper_B', 'trackbarwindow', 255, 255, nothing)
+cv2.createTrackbar('Lower_R', 'trackbarwindow', 60, 255, nothing)
+cv2.createTrackbar('Lower_G', 'trackbarwindow', 35, 255, nothing)
+cv2.createTrackbar('Lower_B', 'trackbarwindow', 56, 255, nothing)
+cv2.createTrackbar('Upper_R', 'trackbarwindow', 145, 255, nothing)
+cv2.createTrackbar('Upper_G', 'trackbarwindow', 170, 255, nothing)
+cv2.createTrackbar('Upper_B', 'trackbarwindow', 190, 255, nothing)
+cv2.createTrackbar('Gaussian_Blur', 'trackbarwindow', 5, 255, nothing)	# 가우시안 Blur
 
-img = cv2.imread('model.PNG')
+
 while(1):
     #ret, frame = cap.read()
+    img = cv2.imread('model.PNG')
+    img = cv2.resize(img, (1260, 960))
 
     l_r = cv2.getTrackbarPos('Lower_R', 'trackbarwindow')
     l_g = cv2.getTrackbarPos('Lower_G', 'trackbarwindow')
@@ -23,6 +26,15 @@ while(1):
     u_r = cv2.getTrackbarPos('Upper_R', 'trackbarwindow')
     u_g = cv2.getTrackbarPos('Upper_G', 'trackbarwindow')
     u_b = cv2.getTrackbarPos('Upper_B', 'trackbarwindow')
+    Gauss_blur = cv2.getTrackbarPos('Gaussian_Blur', 'trackbarwindow')
+
+    # 가우시안 필터, 짝수일때 +1, 홀수일때 그데로
+    if Gauss_blur % 2 == 1:  # 홀수
+        pass
+    else:  # 짝수
+        Gauss_blur = Gauss_blur + 1
+    # 가우시안 필터
+    img = cv2.GaussianBlur(img, (Gauss_blur, Gauss_blur), 0)
 
     frame = img
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
@@ -46,13 +58,14 @@ while(1):
 
     # 컨투어 찾기, 중심점 찾기
     cnt = 0
+	# 여기 오류나면 => contours, _ 으로 변경. 
     _, contours, _ = cv2.findContours(im_floodfill, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)  # 컨투어 찾기
     if len(contours) != 0:
         for contour in contours:
             if (cv2.contourArea(contour) > 100) and (cv2.contourArea(contour) < 100000):  # **필요한 면적을 찾아 중심점 표시
                 ball_area = cv2.contourArea(contour)
                 mom = contour
-                cv2.drawContours(res, [mom], 0, (0, 0, 255), 2)
+                #cv2.drawContours(res, [mom], 0, (0, 0, 255), 2)
                 M = cv2.moments(mom)
                 cx_origin = int(M['m10'] / M['m00'])
                 cy_origin = int(M['m01'] / M['m00'])
