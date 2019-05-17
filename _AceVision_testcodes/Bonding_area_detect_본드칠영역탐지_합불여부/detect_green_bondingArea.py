@@ -131,7 +131,11 @@ while(1):
 
     # 컨투어 찾기, 중심점 찾기
     # cnt = 0
-    _, contours, _ = cv2.findContours(im_floodfill, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)  # 컨투어 찾기
+    try:
+        _, contours, _ = cv2.findContours(im_floodfill, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)  # 컨투어 찾기
+    except:
+        contours, _ = cv2.findContours(im_floodfill, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)  # 버전에 따른 오류 예방
+
     if len(contours) != 0:
         for contour in contours:
             if (cv2.contourArea(contour) > 0) and (cv2.contourArea(contour) < 21875):  # **필요한 면적을 찾아 중심점 표시
