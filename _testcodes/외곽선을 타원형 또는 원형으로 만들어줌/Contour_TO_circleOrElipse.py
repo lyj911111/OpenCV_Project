@@ -19,7 +19,11 @@ img = cv2.GaussianBlur(img,(5, 5),0)
 edges = cv2.Canny(img, lower, upper)
 
 # 찾은 영역범위에 외곽선을 그려줌.
-_, contours , _= cv2.findContours(edges, cv2.RETR_TREE, 1)
+try:
+    _, contours , _= cv2.findContours(edges, cv2.RETR_TREE, 1)
+except:
+    contours, _ = cv2.findContours(edges, cv2.RETR_TREE, 1)
+    
 rep = cv2.drawContours(img1, contours, -1, (0,255,0), 3)
 
 # 외곽선을 원형 형태로 바꾸어줌. (원 또는 타원)
