@@ -1,4 +1,4 @@
-import openpyxl     # pip install openpyxl
+import openpyxl     # pip install openpyxl==2.6.2
 
 '''
     엑셀 파일 쓰기.
