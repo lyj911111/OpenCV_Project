@@ -4,7 +4,13 @@ import glob
 import re
 
 
-# 리스트에 있는 값을 Text로 남기기. flag : 저장 on / off 기능
+'''
+    함수) list 내부의 값을 text 로 저장.
+    
+    param
+        list : list 값 [(1,2), (3,4), ...]
+        flag : True 일 경우, 리스트의 값을 저장함. False 경우, 저장하지 않음.
+'''
 def savetxt(list, flag=True):
     if flag == True:
         file = open('./savedata.txt','w')
@@ -16,7 +22,12 @@ def savetxt(list, flag=True):
     else: pass
 
 
-# text로 저장된 좌표를 읽어서 리스트를 리턴.
+'''
+    함수) text 에 있는 값을 line 단위로 읽어서 list에 저장. 
+
+    return
+        number_list : list 값 [(1,2), (3,4), ...]
+'''
 def loadtxt():
     loadlist = []
     file = open('./savedata.txt', 'r')              # 읽기모드로 파일열기
@@ -35,7 +46,19 @@ def loadtxt():
     return number_list
 
 
-# 이미지와 좌표값이 들어오면 픽셀과 주변 픽셀의 평균을 구함. **주의** (y, x)좌표로 들어옴.
+
+'''
+    함수) 이미지와 좌표값이 들어오면 픽셀과 주변 픽셀의 평균을 구함. **주의** (y, x)좌표로 들어옴. (gray img)
+    
+    param
+        img : 픽셀을 읽고자 하는 이미지 Array
+        y   : y좌표
+        x   : x좌표
+        
+    return
+        0   : 픽셀 평균값 60 이하 (어두움)
+        1   : 픽셀 평균값 60 이상 (밝음)
+'''
 def avg_pixel(img, y, x):
 
     pixel = img[y][x]
@@ -52,8 +75,18 @@ def avg_pixel(img, y, x):
         return 0
 
 
-
-# 좌표값과 이미지Array를 입력, Display된 이미지를 리턴.
+'''
+    함수) 이미지와 좌표값을 입력하면, 좌표값을 Display한 이미지 리턴. 픽셀 합불 여부값도 리턴.
+          avg_pixel() 함수와 함께 사용.
+          
+    param
+        img        : 이미지 array
+        coordList  : 좌표값을 가지고 있는  List ex) [(1,2), (3,4), (5,6),...]
+    return
+        img        : Display 된 이미지 array
+        ok_cnt     : 합격 픽셀 갯수
+        ng_cnt     : 불합 픽셀 갯수
+'''
 def detect_display(img, coordList):
     ok_cnt = 0
     ng_cnt = 0
@@ -74,10 +107,12 @@ def detect_display(img, coordList):
 
 
 '''
-    Chess 보정 선행처리를 마친 이미지를 넣어 펼쳐진 이미지를 리턴.
+    함수) Chess 보정 선행처리를 마친 이미지를 넣어 펼쳐진 이미지를 리턴.
     
-    param : 왜곡된 이미지
-    return : 펼쳐진 이미지
+    param
+        img  :  왜곡된 이미지
+    return
+        dst  :  펼쳐진 이미지
 '''
 def calibration(img):
     global objpoints, imgpoints
@@ -106,7 +141,18 @@ def calibration(img):
 
 
 
-# Frame 중 한개의 이미지를 취득하여 판독을 함.
+
+'''
+    함수) 연속되는 Frame에서 1개의 이미지만 취득하여 리벳 유무 판독을 진행함.
+    
+    param    
+        img      :  Raw(편집없는 원본) 이미지 array
+        saveflag :  True or False 값 입력. [True = 판독한 값을 Text 저장 / False = 불러온 좌표값으로 판독]
+    
+    return
+        img       :  판독을 완료한 이미지
+        rivetlist :  리벳 좌표값을 List 리턴
+'''
 def judgeImage(img, saveflag):
     img = calibration(img)  # 보정된 이미지 리턴 (속도가 느려짐)
     img = cv2.resize(img, (1260, 960))
@@ -155,7 +201,23 @@ def judgeImage(img, saveflag):
 
     return img, rivetlist
 
+'''
+    함수) Main 함수 리벳 유무 판독 수행, flag 값에 따라 세팅하여 text으로 저장할지,
+          text값을 불러와 판독할지 결정.
+    
+    param 
+        flag
 
+        세팅모드 = True
+        실행모드 = False
+
+        세팅모드
+            'a' key: 현재 Frame 리벳 판독 시행.
+            's' key: 판독된 리벳의 좌표를 text 저장.
+            
+        실행모드
+            text 저장된 좌표 값을 기준으로 판독 수행.
+'''
 def main(flag):
     global objpoints, imgpoints
 
