@@ -61,12 +61,18 @@ def img_filtering(img):
 
     # Bushing 만 있는 구간만 뽑아내기 위해 마스크를 씌움.
     global Mask1st, Mask2nd
-    Mask1st = [(880, 3), (940, 40)]
-    Mask2nd = [(884, 920), (947, 955)]
+    Mask1st = [(910, 3), (990, 40)]
+    Mask2nd = [(920, 920), (995, 955)]
     ROImask = np.zeros(img.shape[:2], np.uint8)
     ROImask = cv2.rectangle(ROImask, Mask1st[0], Mask1st[1], (255, 255, 255), -1)  # 첫번째 사각 마스크
     ROImask = cv2.rectangle(ROImask, Mask2nd[0], Mask2nd[1], (255, 255, 255), -1)  # 두번째 사각 마스크
     final_mask = cv2.bitwise_and(final_mask, final_mask, mask=ROImask)  # 합성하여 뽑아냄.
+
+
+    #cv2.imshow('c', img)
+    #cv2.imshow('b',ROImask)
+    cv2.imshow('a',final_mask)
+    cv2.waitKey(0)
 
     return final_mask
 
@@ -140,7 +146,7 @@ def main():
         #img = cv2.imread('./img/backside.bmp')  # Bushing 있을 때
         #img = cv2.imread('./img/nobushing.bmp')  # Bushing 없을 때
         img = cv2.imread('./img/onebushing.bmp')  # Bushing 없을 때
-        img = cv2.resize(img, (1206, 960))
+        img = cv2.resize(img, (1260, 960))
         size_h = img.shape[0]   # 세로사이즈
         size_w = img.shape[1]   # 가로사이즈
         #print(size_w, size_h)
@@ -154,7 +160,7 @@ def main():
         centerptList = find_area(final_mask, img)
         print(centerptList)
 
-        judge(img ,centerptList, size_h)
+        judge(img , centerptList, size_h)
 
         # centerPoint = []
         # try:
