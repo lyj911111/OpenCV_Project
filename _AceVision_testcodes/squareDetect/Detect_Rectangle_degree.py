@@ -222,8 +222,11 @@ def execute():
         minx_contour = []
         miny_contour = []
         square_center = []
-        _, contours, _ = cv2.findContours(final_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)  # 컨투어 찾기
-
+        try:
+            _, contours, _ = cv2.findContours(final_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)  # 컨투어 찾기
+        except:
+            contours, _ = cv2.findContours(final_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)  # 컨투어 찾기
+        
         # 컨투어가 있을때
         if len(contours) != 0:
             for contour in contours:
