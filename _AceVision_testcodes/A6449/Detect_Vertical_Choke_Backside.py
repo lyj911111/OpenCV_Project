@@ -46,6 +46,32 @@ class calulateCoordinate:
         y = int((y1 + y2) / 2)
         return x, y
 
+    # 두개 선분, (x1, y1) (x2, y2) 선분, (x3, y3) (x4, y4) 선분의 좌표값을 입력하면, 교점좌표 (x, y)를 반환
+    def crosspoint(self, x1, y1, x2, y2, x3, y3, x4, y4):
+        t_under = (((y4 - y3) * (x2 - x1)) - ((x4 - x3) * (y2 - y1)))
+        t_upper = (((x4 - x3) * (y1 - y3)) - ((y4 - y3) * (x1 - x3)))
+        t = t_upper / t_under
+
+        s_under = (((y4-y3)*(x2-x1))-((x4-x3)*(y2-y1)))
+        s_upper = (((x2-x1)*(y1-y3))-((y2-y1)*(x1-x3)))
+        s = s_upper / s_under
+
+        x = x1 + t * (x2-x1)
+        y = y1 + t * (y2-y1)
+        return x, y
+
+    '''
+        두개의 선분사이 사잇각을 구함.
+        직선1 끝점 (x1, y1), 직선2 끝점 (x2, y2), 두 직선의 교차점(x3, y3)
+    '''
+    def jointAngle(self, x1, y1, x2, y2, cx, cy):
+        theta2 = math.atan((y2 - cy)/(x2 - cx))
+        theta1 = math.atan((y1 - cy)/(x1 - cx))
+        theta = theta2 - theta1
+        degree = round(theta * (180 / math.pi), 4)
+
+        return degree
+
     # 직각삼각형의 밑변과 높이를 입력하면 각도를 반환.
     def angle(self, baseline, height):
         theta = math.atan((abs(height)/abs(baseline)))
@@ -585,6 +611,7 @@ def display_final(img, x1,y1, x2,y2, final_function):
 
 # 원본, choke마스크이미지(이진화)
 def detect_LineDegree(img, final_mask):
+    global outX1, outY1, outX2, outY2
 
     cp_img = img.copy()
     showimg = img.copy()
@@ -607,24 +634,40 @@ def detect_LineDegree(img, final_mask):
                 # then apply fitline() function
                 [vx, vy, x, y] = cv2.fitLine(contour, cv2.DIST_L2, 0, 0.01, 0.01)
                 # Now find two extreme points on the line to draw line
-                lefty = int((-x * vy / vx) + y)
-                righty = int(((cp_img.shape[1] - x) * vy / vx) + y)
-                cv2.line(img, (0, lefty),(cp_img.shape[1] - 1, righty), 255, 2)     # 기본 직선의 좌표
-                cv2.circle(img, (0, lefty), 10, (0, 0, 255), -1)
-                cv2.circle(img, (cp_img.shape[1] - 1, righty), 3, (0, 0, 255), -1)
+                lefty = (-x * vy / vx) + y
+                righty = ((cp_img.shape[1] - x) * vy / vx) + y
+                cv2.line(img, (0, int(lefty)),(cp_img.shape[1] - 1, int(righty)), 255, 2)     # 기본 직선의 좌표
+                cv2.circle(img, (0, int(lefty)), 10, (0, 0, 255), -1)
+                cv2.circle(img, (cp_img.shape[1] - 1, int(righty)), 3, (0, 0, 255), -1)
+
+                print("제품 외곽선의 아랫변 꼭지점", outX1, outY1, outX2, outY2)
+                cv2.line(img, (outX1, outY1),(outX2, outY2),(0,255,255),2)
 
                 cal = calulateCoordinate()
+
+
                 d = cal.distance(0, lefty, cp_img.shape[1] - 1, righty)
                 print("두점사이거리",d)
-                e = cal.horizontal_distance(0, lefty, cp_img.shape[1] - 1, righty)
 
+                e = cal.horizontal_distance(0, lefty, cp_img.shape[1] - 1, righty)
                 print("수평한 거리", e)
+
                 f = cal.vertical_distance(0, lefty, cp_img.shape[1] - 1, righty)
                 print("수직한 거리", f)
+
                 z = round(cal.angle(f,e),2)
                 print( "각도는", z )
                 if e < 0:
                     z = 90 + (90-z)
+
+                # 교차점
+                crossPoint = cal.crosspoint(outX1, outY1, outX2, outY2, 0, lefty, cp_img.shape[1] - 1, righty)
+                print("교차점",crossPoint)
+                cv2.circle(img, (int(crossPoint[0]), int(crossPoint[1])), 5, (0, 0, 255), -1)
+
+                jointangle = cal.jointAngle(outX2, outY2, cp_img.shape[1] - 1, righty, crossPoint[0], crossPoint[1])
+                print('사잇각', jointangle)
+                cv2.putText(img, "{}".format(jointangle), (int(crossPoint[0]) + 20, int(crossPoint[1] - 20)), cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (0, 255, 0), 2)  # 좌표의 1차 함수방정식
 
                 # 1차 함수표현 y = ax * b
                 a = (righty - lefty) / (cp_img.shape[1] - 1)
@@ -724,9 +767,131 @@ def MaskFromCircle_bin(img):
     # dipoleMask = cv2.rectangle(dipoleMask, (0, circlelist[1][1]+20),(img.shape[1], circlelist[1][1]+125), (0, 0, 0), -1)
     return dipoleMask
 
+'''
+    제품의 외곽선을 탐지하여 
+    밑변의 좌표를 리턴
+'''
+def outline_rectangle_approx(img, maksed_img):
+    cp_img = img.copy()
+
+    # cv2.imshow('who', img)
+    # cv2.imshow('are', maksed_img)
+
+    # 근사사각을 위한 마스크
+    approxMask = np.zeros(img.shape[:2], np.uint8)
+
+    Rivet_center = []
+    try:
+        _, contours, _ = cv2.findContours(maksed_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)  # 컨투어 찾기
+    except:
+        contours, _ = cv2.findContours(maksed_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)  # 컨투어 찾기
+    if len(contours) != 0:
+        for contour in contours:
+            if (cv2.contourArea(contour) > 500000) and (cv2.contourArea(contour) < 650000):  # **필요한 면적을 찾아 중심점 좌표를 저장
+
+                # 근사 사각형으로 치환
+                rect = cv2.minAreaRect(contour)
+                box = cv2.boxPoints(rect)
+                box = np.int0(box)
+                cv2.drawContours(img, [box], 0, (255, 255, 0), 2)
+                cv2.drawContours(approxMask, [box], 0, (255, 255, 255), -1)
+
+                ball_area = cv2.contourArea(contour)
+                # cv2.drawContours(img, contour, -1, (0, 255, 0), 2)  # 근사화 시킨 컨투어 그리기
+                mom = contour
+                M = cv2.moments(mom)
+                cx_origin = int(M['m10'] / M['m00'])
+                cy_origin = int(M['m01'] / M['m00'])
+
+                # cv2.drawContours(img, [approx], -1, (0, 0, 255), 2)  # 근사화 시킨 컨투어 그리기
+                print(ball_area)
+
+                cv2.circle(img, (cx_origin, cy_origin), 5, (0, 255, 255), -1)  # 중심 좌표 표시
+                Rivet_center.append([cx_origin, cy_origin])
+
+    result = cv2.bitwise_and(img, img, mask=approxMask)
+
+    print("꼭지점", box)
+    print("밑변 꼭지점", box[0][0],box[0][1],box[3][0],box[3][1])
+
+    cv2.imshow('re', result)
+    return box[0][0], box[0][1], box[3][0], box[3][1]
+
+'''
+    구체적이고 정확한 외곽선을 탐지하여 필터링.
+
+    :param
+        대략 마스킹 되어있는 이미지
+    :return
+        구체적으로 마스킹씌운 이미지 리턴.
+'''
+def img_filter(img):
+    # img = increase_brightness(img, 255)
+    img = cv2.GaussianBlur(img, (11, 11), 0)  # Blur 필터링
+
+    # cv2.imshow('asdf', img)
+
+    frame2 = img.copy()  # 영상원본
+
+    gray_frame = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+    blue, green, red = cv2.split(img)  # 원본에서 BGR 분리
+    frame_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)  # HSV(색상, 채도, 명도) 분리
+    h, s, v = cv2.split(frame_hsv)  # 분리후 저장.
+
+    frame_hls = cv2.cvtColor(img, cv2.COLOR_BGR2HLS)  # BGR -> HLS로
+    H, L, S = cv2.split(frame_hls)  # H,L,S 분리
+    kernel = np.ones((3, 3), np.uint8)
+
+    _, gray1 = cv2.threshold(gray_frame, 255, 255, cv2.THRESH_BINARY_INV)
+    _, blue1 = cv2.threshold(blue, 255, 255, cv2.THRESH_BINARY_INV)
+    _, green1 = cv2.threshold(green, 255, 255, cv2.THRESH_BINARY_INV)
+    _, red1 = cv2.threshold(red, 255, 255, cv2.THRESH_BINARY_INV)
+    _, h1 = cv2.threshold(h, 255, 255, cv2.THRESH_BINARY_INV)
+    _, s1 = cv2.threshold(s, 131, 255, cv2.THRESH_BINARY_INV)       # <== 131~136 사각 외곽선을 결정하는 중요한 값
+    _, v1 = cv2.threshold(v, 255, 255, cv2.THRESH_BINARY_INV)
+    _, H1 = cv2.threshold(H, 255, 255, cv2.THRESH_BINARY_INV)
+    _, L1 = cv2.threshold(L, 255, 255, cv2.THRESH_BINARY_INV)
+    _, S1 = cv2.threshold(S, 255, 255, cv2.THRESH_BINARY_INV)
+
+    _, blue_ = cv2.threshold(blue, 0, 255, cv2.THRESH_BINARY)
+    _, green_ = cv2.threshold(green, 0, 255, cv2.THRESH_BINARY)
+    _, red_ = cv2.threshold(red, 0, 255, cv2.THRESH_BINARY)
+    _, h_ = cv2.threshold(h, 18, 255, cv2.THRESH_BINARY)
+    _, s_ = cv2.threshold(s, 0, 255, cv2.THRESH_BINARY)
+    _, v_ = cv2.threshold(v, 0, 255, cv2.THRESH_BINARY)
+    _, H_ = cv2.threshold(H, 128, 255, cv2.THRESH_BINARY)
+    _, L_ = cv2.threshold(L, 128, 255, cv2.THRESH_BINARY)
+    _, S_ = cv2.threshold(S, 128, 255, cv2.THRESH_BINARY)
+
+    final_mask = gray1
+    final_mask = cv2.bitwise_and(final_mask, blue1)
+    final_mask = cv2.bitwise_and(final_mask, green1)
+    final_mask = cv2.bitwise_and(final_mask, red1)
+    final_mask = cv2.bitwise_and(final_mask, h1)
+    final_mask = cv2.bitwise_and(final_mask, s1)
+    final_mask = cv2.bitwise_and(final_mask, v1)
+    final_mask = cv2.bitwise_and(final_mask, H1)
+    final_mask = cv2.bitwise_and(final_mask, L1)
+    final_mask = cv2.bitwise_and(final_mask, S1)
+
+    final_mask = cv2.bitwise_and(final_mask, blue_)
+    final_mask = cv2.bitwise_and(final_mask, green_)
+    final_mask = cv2.bitwise_and(final_mask, red_)
+    final_mask = cv2.bitwise_and(final_mask, v_)
+
+    # final_mask = cv2.erode(final_mask, kernel, iterations=1)
+    # final_mask = cv2.dilate(final_mask, kernel, iterations=1)
+    result = cv2.bitwise_and(frame2, frame2, mask=final_mask)
+
+    cv2.imshow('bbbbbbbbbb',result)
+    cv2.imshow('abc', final_mask)
+
+    return final_mask
+
 
 def judgeImage(img):
-    global resolution
+    global resolution, outX1, outY1, outX2, outY2
 
     img = calibration(img)  # 보정된 이미지 리턴 (속도가 느려짐)
     img = cv2.resize(img, resolution)
@@ -738,6 +903,10 @@ def judgeImage(img):
     # 제품영역 외 모든 부분 마스크
     masked_edge_img = cv2.bitwise_and(img, img, mask=masked_edge)
     cv2.imshow('masked_edge', masked_edge_img)
+    cv2.imshow('what', img)
+
+    outMask= img_filter(masked_edge_img)
+    outX1, outY1, outX2, outY2 = outline_rectangle_approx(masked_edge_img, outMask)
 
     # 제품외 영역 제외 + Dipole 부분 마스크 = Choke 마스크만 남김.
     line_alive = img_filtering(img)
