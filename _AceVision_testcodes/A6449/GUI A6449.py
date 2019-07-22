@@ -82,19 +82,42 @@ def timerCounter(judge, Serial_No):
     print("Timer counter:", global_cnt)
     print("inside timer SN:", Serial_No)
 
-    threading.Timer(1000, timerCounter).start()  # 1000
+    # 날짜, 시간 취득
+    local_time = get_today()
+    yy,mm,dd,h,m,s = check_time_value()
+
+    threading.Timer(1000, timerCounter).start()  # 1000 타이머 카운트 스레드 작동
     if global_cnt > 1 and Serial_No != '':
         sendSignal(judge)
         light_off()
         result_display(0, data=Serial_No)    # GUI에 시리얼번호 출력
-        result_display(2, storeTacttime)
+        result_display(2, data="{} // {}:{}:{}".format(local_time, h, m, s))
+        result_display(3, data=storeTacttime)
         global_cnt = 0
+        # 결과 저장 알림 라벨
+        text_label = Label(root, text="image file saved\n log file saved", width=int(screen_width * (14 / tk_width)), height=int(screen_height * (2 / tk_height)), font="Helvetica 20 bold", fg="RoyalBlue")
+        text_label.place(x=screen_width * (1640 / tk_width), y=screen_height * (660 / tk_height))
+        # OK, NG 알림 라벨 출력
+        if judge == 1:
+            result_label = Label(root, text="OK", font="Helvetica 140 bold", fg="RoyalBlue")
+            result_label.place(x=screen_width * (1550 / tk_width), y=screen_height * (760 / tk_height))
+        elif judge == 2:
+            result_label = Label(root, text="NG", font="Helvetica 140 bold", fg="red")
+            result_label.place(x=screen_width * (1550 / tk_width), y=screen_height * (760 / tk_height))
     elif global_cnt > 5:
         sendSignal(2)
         light_off()
         result_display(1)
-        result_display(2, storeTacttime)
+        result_display(2, data="{} // {}:{}:{}".format(local_time, h, m, s))
+        result_display(3, data=storeTacttime)
         global_cnt = 0
+        # 결과 저장 알림 라벨
+        text_label = Label(root, text="image file saved\n log file saved", width=int(screen_width * (14 / tk_width)), height=int(screen_height * (2 / tk_height)), font="Helvetica 20 bold", fg="RoyalBlue")
+        text_label.place(x=screen_width * (1640 / tk_width), y=screen_height * (660 / tk_height))
+        # Tact Time over 알림 라벨 출력
+        result_label = Label(root, text="Over\nTact Time", font="Helvetica 65 bold", fg="red")
+        result_label.place(x=screen_width * (1450 / tk_width), y=screen_height * (760 / tk_height))
+
         print("Serial Number Timout Error")
 
 
@@ -1020,7 +1043,6 @@ def decode(im):
     #im = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
     im = cv2.adaptiveThreshold(im, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 45, 5)   # 51 5, 49 5, 47 5,
     # cv2.imshow("barcode_area", im)
-    print("heelo?")
     decodedObjects = pyzbar.decode(im)  # 바코드와 QR코드를 찾아냄
 
     # Print results
@@ -1029,7 +1051,6 @@ def decode(im):
         print('Data : ', obj.data, '\n')
     try:
         Serial_No = decodedObjects[0][0].decode()
-        #print("whoareyou", Serial_No)
         return Serial_No
     except:
         Serial_No = ''
@@ -1122,7 +1143,7 @@ def sendSignal(signal=0):
     sum_tact_time_list.clear()
     ser.write(signal)  # 전송
 
-
+# 결과를 GUI 라벨옆 Text Box에 출력
 def result_display(select, data='input data'):
 
     if select == 0:
@@ -1133,7 +1154,10 @@ def result_display(select, data='input data'):
         RV_SN.insert(20, "Serial Number Error")
     elif select == 2:
         RV_TIME.delete(0, END)
-        RV_TIME.insert(20, str(data) + " [sec]")
+        RV_TIME.insert(20, data)
+    elif select == 3:
+        RV_TACT.delete(0, END)
+        RV_TACT.insert(20, str(data) + " [sec]")
 
 def Reformat_Image(image, ratio_w, ratio_h):
     height, width = image.shape[:2]
@@ -1176,7 +1200,7 @@ def chessDistortionInit():
             imgpoints.append(corners)
     print("Complete Calibration of Chess board")
 
-
+# 결과 저장 이미지 출력
 def imageShow(N, Display):
     frame = N
     cv2image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -1185,11 +1209,10 @@ def imageShow(N, Display):
     Display.imgtk = imgtk
     Display.configure(image=imgtk)
 
-
+# 실시간웹캠 출력
 def webCamShow(N, Display, cam_no):
     _, frame = N
     framecp = frame.copy()
-
 
     # GUI에 표현되는 프레임 크기 비율 (x, y 값 비율)
     frame = Reformat_Image(frame, 0.16, 0.16)
@@ -1203,7 +1226,7 @@ def webCamShow(N, Display, cam_no):
     return framecp
 
 # 무한 루프
-@logging_time
+@logging_time  # tact time 측정 deco 함수
 def read_frame():
     global cam1_label, dipoleResult, dipole_label, choke_label
     global resolution
@@ -1271,7 +1294,7 @@ def main():
     Label(root, text="Information", height=int(screen_height * (25 / tk_height)), width=int(screen_width * (11 / tk_width)), fg="red", relief="groove", bg="#ebebeb", font="Helvetica 13 bold").place(x=-14, y=(screen_height / 3) + screen_height * (140 / tk_height) + (0 * screen_height * (80 / tk_height)), relx=0.01, rely=0.01)
 
     # 2nd 라인 라벨 정보 Label 생성
-    name = ["Serial\nNumber", "Time", "No. of\nAccumulation", "No. of\nOK", "No. of\nNG", "Tact Time", ]  # 라벨 타이틀
+    name = ["Serial\nNumber", "Current Time", "Tact Time", "No. of\nAccumulation", "No. of\nOK", "No. of\nNG",  ]  # 라벨 타이틀
     for i in range(len(name)):
         Label(root, text=name[i], height=int(screen_height * (5 / tk_height)), width=int(screen_width * (17 / tk_width)), fg="red", relief="groove", bg="#ebebeb", font="Helvetica 9 bold").place(x=screen_width * (95 / tk_width), y=(screen_height / 3) + screen_height * (140 / tk_height) + (i * screen_height * (80 / tk_height)), relx=0.01, rely=0.01)
 
@@ -1325,6 +1348,15 @@ def main():
     Button(root, text="Open\nPass Folder", font="Helvetica 10 bold", relief="raised", overrelief="solid", bg="#ebebeb", width=int(screen_width * (10 / tk_width)), height=int(screen_height * (4 / tk_height)), bd=3, padx=2, pady=2, command=open_folder_pass).place(x=screen_width * (1290 / tk_width) + (0 * 230), y=(screen_height / 3) + screen_height * (161 / tk_height) + (0 * screen_height * (80 / tk_height)))
     Button(root, text="Open\nFail Folder", font="Helvetica 10 bold", relief="raised", overrelief="solid", bg="#ebebeb", width=int(screen_width * (10 / tk_width)), height=int(screen_height * (4 / tk_height)), bd=3, padx=2, pady=2, command=open_folder_ng).place(x=screen_width * (1290 / tk_width) + (1 * 230), y=(screen_height / 3) + screen_height * (161 / tk_height) + (0 * screen_height * (80 / tk_height)))
     Button(root, text="Open\nLog Folder", font="Helvetica 10 bold", relief="raised", overrelief="solid", bg="#ebebeb", width=int(screen_width * (10 / tk_width)), height=int(screen_height * (4 / tk_height)), bd=3, padx=2, pady=2, command=open_folder_log).place(x=screen_width * (1290 / tk_width) + (2 * 230), y=(screen_height / 3) + screen_height * (161 / tk_height) + (0 * screen_height * (80 / tk_height)))
+
+    # 10th Choke Counter 라벨
+    Label(root, text="Choke Count\n(NG Count)", height=int(screen_height * (5 / tk_height)), width=int(screen_width * (13 / tk_width)), fg="red", relief="groove", bg="#ebebeb", font="Helvetica 13 bold").place(x=screen_width * (970 / tk_width), y=(screen_height / 3) + screen_height * (270 / tk_height) + (0 * screen_height * (80 / tk_height)), relx=0.01, rely=0.01)
+
+    # 11th Result 라벨
+    Label(root, text="Result", height=int(screen_height * (5 / tk_height)), width=int(screen_width * (13 / tk_width)), fg="red", relief="groove", bg="#ebebeb", font="Helvetica 13 bold").place(x=screen_width * (1480 / tk_width),y=(screen_height / 3) + screen_height * (270 / tk_height) + (0 * screen_height * (80 / tk_height)), relx=0.01, rely=0.01)
+
+    # 10th Dipole Counter 라벨
+    Label(root, text="Dipole Count\n(NG Count)", height=int(screen_height * (5 / tk_height)), width=int(screen_width * (13 / tk_width)), fg="red", relief="groove", bg="#ebebeb", font="Helvetica 13 bold").place(x=screen_width * (970 / tk_width), y=(screen_height / 3) + screen_height * (395 / tk_height) + (0 * screen_height * (80 / tk_height)), relx=0.01, rely=0.01)
 
     chessDistortionInit()   # 왜곡 보정 초기화
 
