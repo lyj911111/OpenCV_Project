@@ -30,6 +30,9 @@ protocol = 0
 port_num = ''
 PLC_ready = ''
 judgeFlag = 0
+tactFlag = 0
+sum_tact_time = 0
+sum_tact_time_list = []
 
 check_barcode_area = 0
 check_year = 0
@@ -73,15 +76,42 @@ except:
     print("[ERROR] : please check Light module RS232")
 
 global_cnt = 0
-def timerCounter(judge):
-    global global_cnt
+def timerCounter(judge, Serial_No):
+    global global_cnt, storeTacttime
     global_cnt += 1
     print("Timer counter:", global_cnt)
+    print("inside timer SN:", Serial_No)
+
     threading.Timer(1000, timerCounter).start()  # 1000
-    if global_cnt > 1:
+    if global_cnt > 1 and Serial_No != '':
         sendSignal(judge)
         light_off()
+        result_display(0, data=Serial_No)    # GUI에 시리얼번호 출력
+        result_display(2, storeTacttime)
         global_cnt = 0
+    elif global_cnt > 5:
+        sendSignal(2)
+        light_off()
+        result_display(1)
+        result_display(2, storeTacttime)
+        global_cnt = 0
+        print("Serial Number Timout Error")
+
+
+# 작동시간을 리턴
+def logging_time(original_fn):
+    global tact_time
+    def wrapper_fn(*args, **kwargs):
+        global tact_time
+        start_time = time.time()
+        result = original_fn(*args, **kwargs)
+        end_time = time.time()
+        tact_time = end_time - start_time
+        # print("WorkingTime[{}]: {} sec".format(original_fn.__name__, end_time - start_time))
+        return result
+
+    return wrapper_fn
+
 
 class calulateCoordinate:
 
@@ -980,51 +1010,51 @@ def displayRate(ori_img, x1, y1, x2, y2):
     # roi = img_Contrast(roi)
 
     roi = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+    return roi
 
-    decode(roi)     # 바코드 판독
 
 
-# 바코드 판독
 def decode(im):
-    global Serial_No, pre_Serial_No
 
     im = Reformat_Image(im, 1.5, 1.5)
-    # im = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
-    im = cv2.adaptiveThreshold(im, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 51, 5)   # 51 5, 49 5, 47 5 <= 잘 읽었던 값
-
+    #im = cv2.cvtColor(im, cv2.COLOR_BGR2GRAY)
+    im = cv2.adaptiveThreshold(im, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 45, 5)   # 51 5, 49 5, 47 5,
     # cv2.imshow("barcode_area", im)
+    print("heelo?")
     decodedObjects = pyzbar.decode(im)  # 바코드와 QR코드를 찾아냄
-    # Serial_No = decodedObjects[16:29]
-    Serial_No = decodedObjects[0][0].decode()
 
     # Print results
     for obj in decodedObjects:
         print('Type : ', obj.type)
         print('Data : ', obj.data, '\n')
+    try:
+        Serial_No = decodedObjects[0][0].decode()
+        #print("whoareyou", Serial_No)
+        return Serial_No
+    except:
+        Serial_No = ''
+        return Serial_No
 
 
 
-'''
-    원본 raw image를 받고 ROI 구간의 바코드를 확대하여 판독함.
-'''
 def checkSerialNumber(img):
     global resolution
-    barcode_area = [(730, 350), (800, 600)]  # <= 바코드 선택 영역
+    barcode_area = [(730, 350), (800, 600)]
     raw_img = img.copy()
 
     img = cv2.resize(img, resolution)
     img = cv2.rectangle(img, barcode_area[0], barcode_area[1], (0, 255, 0), 2)
-    displayRate(raw_img, barcode_area[0][0], barcode_area[0][1], barcode_area[1][0], barcode_area[1][1])
+    roi = displayRate(raw_img, barcode_area[0][0], barcode_area[0][1], barcode_area[1][0], barcode_area[1][1])
 
-    # 시리얼 영역 디버깅용.
+    # FOR DEBUGGING OF BARCODE !!
     # cv2.imshow('serialcheck', img)
-    pass
+    return roi
 
 
 readyflag = 0
 count = 0
 def checkStatusSignal(img):
-    global readyflag, count
+    global readyflag, count, tact_time, tactFlag, sum_tact_time_list, sum_tact_time
     global cp_final
 
     count = count + 1
@@ -1033,10 +1063,18 @@ def checkStatusSignal(img):
         count = 0
     print("waiting read signal...")
 
+    if tactFlag == 1:
+        try:
+            sum_tact_time_list.append(tact_time)
+            # print("list", sum_tact_time_list)
+            sum_tact_time = sum(sum_tact_time_list)
+            print("sumTact", sum_tact_time)
+        except:
+            pass
+
     # PLC신호 읽음
     try:
         if ser.readable():
-
             res = ser.readline()
             PLC_ready = res.decode()
             PLC_ready = PLC_ready.lower()  # 소문자로 변환
@@ -1047,10 +1085,12 @@ def checkStatusSignal(img):
                 if PLC_ready[0:5] == 'ready':
                     light_on()  # Turn on the light
 
-                    result_desplay()
+                    tactFlag = 1
 
                     # check serial Number
-                    checkSerialNumber(img)
+                    roi =checkSerialNumber(img)
+                    Serial_No = decode(roi)
+                    print("Serial:", Serial_No)
 
                     print("이곳에 판독 함수를 작성")
                     dipoleResult, cal_img, judge = judgeImage(img)     # result를 GUI로 이용. 리턴: 다이폴이미지, 왜곡보정이미지, 판독값
@@ -1061,11 +1101,10 @@ def checkStatusSignal(img):
                     print("OK 인지 NG 인지 전송")
                     # sendSignal(judge)                   # send judgement to PLC
                     # light_off()
-                    timerCounter(judge)
+                    timerCounter(judge, Serial_No)
                     return [dipoleResult, temp]
     except:
-        pass
-
+        print("Test모드 실행중 - 조명시리얼, PLC시리얼을 연결해세요.")
 
 '''
     합격일때 : sendSignal(1)
@@ -1073,12 +1112,28 @@ def checkStatusSignal(img):
     의 형태로 함수 사용.
 '''
 def sendSignal(signal=0):
+    global tactFlag, sum_tact_time_list, sum_tact_time, storeTacttime
 
     signal = str(signal)
     signal = signal.encode()
+    tactFlag = 0
+    storeTacttime = round(sum_tact_time, 4)
+    sum_tact_time = 0
+    sum_tact_time_list.clear()
     ser.write(signal)  # 전송
-    # sendSignal(0)
 
+
+def result_display(select, data='input data'):
+
+    if select == 0:
+        RV_SN.delete(0, END)
+        RV_SN.insert(20, str(data))
+    elif select == 1:
+        RV_SN.delete(0, END)
+        RV_SN.insert(20, "Serial Number Error")
+    elif select == 2:
+        RV_TIME.delete(0, END)
+        RV_TIME.insert(20, str(data) + " [sec]")
 
 def Reformat_Image(image, ratio_w, ratio_h):
     height, width = image.shape[:2]
@@ -1088,13 +1143,6 @@ def Reformat_Image(image, ratio_w, ratio_h):
 
     res = cv2.resize(image, (width, height), interpolation=cv2.INTER_LINEAR)
     return res
-
-
-def result_desplay():
-    RV_SN.delete(0, END)
-
-    RV_SN.insert(20, Serial_No)
-
 
 
 def chessDistortionInit():
@@ -1155,7 +1203,7 @@ def webCamShow(N, Display, cam_no):
     return framecp
 
 # 무한 루프
-
+@logging_time
 def read_frame():
     global cam1_label, dipoleResult, dipole_label, choke_label
     global resolution
@@ -1163,6 +1211,7 @@ def read_frame():
     rawframe = webCamShow(cap.read(), cam1_label, 0)
     Resultlist = checkStatusSignal(rawframe)         # (PLC 가 Ready를 보내는지 polling으로 체크), Return Dipole result
 
+    # print(type(Resultlist))
 
     if Resultlist == None:
         pass
@@ -1194,7 +1243,7 @@ def main():
     try:
         light_off()
     except:
-        print("조명이 연결되어있지 않음")
+        print("조명이 연결되어 있지 않습니다")
 
     # Tk 객체 소환
     root = Tk()
@@ -1222,7 +1271,7 @@ def main():
     Label(root, text="Information", height=int(screen_height * (25 / tk_height)), width=int(screen_width * (11 / tk_width)), fg="red", relief="groove", bg="#ebebeb", font="Helvetica 13 bold").place(x=-14, y=(screen_height / 3) + screen_height * (140 / tk_height) + (0 * screen_height * (80 / tk_height)), relx=0.01, rely=0.01)
 
     # 2nd 라인 라벨 정보 Label 생성
-    name = ["Serial\nNumber", "Time", "No. of\nAccumulation", "No. of\nOK", "No. of\nNG", "Tact Time", ]    # 라벨 타이틀
+    name = ["Serial\nNumber", "Time", "No. of\nAccumulation", "No. of\nOK", "No. of\nNG", "Tact Time", ]  # 라벨 타이틀
     for i in range(len(name)):
         Label(root, text=name[i], height=int(screen_height * (5 / tk_height)), width=int(screen_width * (17 / tk_width)), fg="red", relief="groove", bg="#ebebeb", font="Helvetica 9 bold").place(x=screen_width * (95 / tk_width), y=(screen_height / 3) + screen_height * (140 / tk_height) + (i * screen_height * (80 / tk_height)), relx=0.01, rely=0.01)
 
@@ -1244,7 +1293,7 @@ def main():
     RV_PASS.place(x=screen_width * (322 / tk_width), y=(screen_height / 3) + screen_height * (140 / tk_height) + (4 * screen_height * (80 / tk_height)), relx=0.01, rely=0.01)
 
     RV_NG = Entry(root, width=int(screen_width * (7 / tk_width)), relief="groove", font="Helvetica 50 bold")
-    RV_NG.place(x=screen_width * (322 / tk_width), y=(screen_height / 3) + screen_height * (140 / tk_height) + (5 * screen_height * (80 / tk_height)), relx=0.01, rely=0.01)
+    RV_NG.place(x=screen_width * (322 / tk_width),y=(screen_height / 3) + screen_height * (140 / tk_height) + (5 * screen_height * (80 / tk_height)), relx=0.01, rely=0.01)
 
     DA_ACC = Entry(root, width=int(screen_width * (7 / tk_width)), relief="groove", font="Helvetica 50 bold")
     DA_ACC.place(x=screen_width * (662 / tk_width), y=(screen_height / 3) + screen_height * (140 / tk_height) + (3 * screen_height * (80 / tk_height)), relx=0.01, rely=0.01)
@@ -1257,14 +1306,15 @@ def main():
 
     # 5th 6개의 하위목록 라벨 생성.
     for i in range(3):
-        Label(root, text="Choke", height=int(screen_height * (5 / tk_height)), width=int(screen_width * (14 / tk_width)), fg="red", relief="groove", bg="#ebebeb", font="Helvetica 9 bold").place(x=screen_width * (219 / tk_width), y=(screen_height / 3) + screen_height * (139 / tk_height) + ((i+3) * screen_height * (80 / tk_height)) , relx=0.01, rely=0.01)
-        Label(root, text="Dipole", height=int(screen_height * (5 / tk_height)), width=int(screen_width * (14 / tk_width)), fg="red", relief="groove", bg="#ebebeb", font="Helvetica 9 bold").place(x=screen_width * (559/ tk_width), y=(screen_height / 3) + screen_height * (139 / tk_height) + ((i+3) * screen_height * (80 / tk_height)), relx=0.01, rely=0.01)
+        Label(root, text="Choke", height=int(screen_height * (5 / tk_height)), width=int(screen_width * (14 / tk_width)), fg="red", relief="groove", bg="#ebebeb", font="Helvetica 9 bold").place(x=screen_width * (219 / tk_width), y=(screen_height / 3) + screen_height * (139 / tk_height) + ((i + 3) * screen_height * (80 / tk_height)), relx=0.01, rely=0.01)
+        Label(root, text="Dipole", height=int(screen_height * (5 / tk_height)), width=int(screen_width * (14 / tk_width)), fg="red", relief="groove", bg="#ebebeb", font="Helvetica 9 bold").place(x=screen_width * (559 / tk_width), y=(screen_height / 3) + screen_height * (139 / tk_height) + ((i + 3) * screen_height * (80 / tk_height)), relx=0.01, rely=0.01)
 
     # 6th 오른쪽 전체박스 생성
     Label(root, height=int(screen_height * (25 / tk_height)), width=int(screen_width * (90 / tk_width)), relief="groove", bg="#ebebeb", font="Helvetica 13 bold").place(x=screen_width * (970 / tk_width), y=(screen_height / 3) + screen_height * (140 / tk_height) + (0 * screen_height * (80 / tk_height)), relx=0.01, rely=0.01)
 
     # 7th Open folder 라벨 생성
-    Label(root, text="Open folder", height=int(screen_height * (5 / tk_height)), width=int(screen_width * (13 / tk_width)), fg="red", relief="groove", bg="#ebebeb", font="Helvetica 13 bold").place(x=screen_width * (970 / tk_width), y=(screen_height / 3) + screen_height * (140 / tk_height) + (0 * screen_height * (80 / tk_height)), relx=0.01, rely=0.01)
+    Label(root, text="Open folder", height=int(screen_height * (5 / tk_height)),
+          width=int(screen_width * (13 / tk_width)), fg="red", relief="groove", bg="#ebebeb", font="Helvetica 13 bold").place(x=screen_width * (970 / tk_width), y=(screen_height / 3) + screen_height * (140 / tk_height) + (0 * screen_height * (80 / tk_height)), relx=0.01, rely=0.01)
 
     # 8th 하위 목록 라벨 생성 pass, fail, log
     MF_name_list = ["PASS", "FAIL", "LOG"]
@@ -1272,11 +1322,12 @@ def main():
         Label(root, text=MF_name_list[i], height=int(screen_height * (4 / tk_height)), width=int(screen_width * (10 / tk_width)), fg="red", relief="groove", bg="#ebebeb", font="Helvetica 12 bold").place(x=screen_width * (1160 / tk_width) + (i * 230), y=(screen_height / 3) + screen_height * (150 / tk_height), relx=0.01, rely=0.01)
 
     # 9th 3개의 버튼 생성
-    Button(root, text="Open\nPass Folder", font="Helvetica 10 bold", relief="raised", overrelief="solid", bg="#ebebeb", width=int(screen_width * (10 / tk_width)), height=int(screen_height * (4 / tk_height)), bd=3, padx=2, pady=2,command=open_folder_pass).place(x=screen_width * (1290 / tk_width) + (0 * 230), y=(screen_height / 3) + screen_height * (161 / tk_height) + (0 * screen_height * (80 / tk_height)))
-    Button(root, text="Open\nFail Folder", font="Helvetica 10 bold", relief="raised", overrelief="solid", bg="#ebebeb", width=int(screen_width * (10 / tk_width)), height=int(screen_height * (4 / tk_height)), bd=3, padx=2, pady=2,command=open_folder_ng).place(x=screen_width * (1290 / tk_width) + (1 * 230), y=(screen_height / 3) + screen_height * (161 / tk_height) + (0 * screen_height * (80 / tk_height)))
-    Button(root, text="Open\nLog Folder", font="Helvetica 10 bold", relief="raised", overrelief="solid", bg="#ebebeb", width=int(screen_width * (10 / tk_width)), height=int(screen_height * (4 / tk_height)), bd=3, padx=2, pady=2,command=open_folder_log).place(x=screen_width * (1290 / tk_width) + (2 * 230), y=(screen_height / 3) + screen_height * (161 / tk_height) + (0 * screen_height * (80 / tk_height)))
+    Button(root, text="Open\nPass Folder", font="Helvetica 10 bold", relief="raised", overrelief="solid", bg="#ebebeb", width=int(screen_width * (10 / tk_width)), height=int(screen_height * (4 / tk_height)), bd=3, padx=2, pady=2, command=open_folder_pass).place(x=screen_width * (1290 / tk_width) + (0 * 230), y=(screen_height / 3) + screen_height * (161 / tk_height) + (0 * screen_height * (80 / tk_height)))
+    Button(root, text="Open\nFail Folder", font="Helvetica 10 bold", relief="raised", overrelief="solid", bg="#ebebeb", width=int(screen_width * (10 / tk_width)), height=int(screen_height * (4 / tk_height)), bd=3, padx=2, pady=2, command=open_folder_ng).place(x=screen_width * (1290 / tk_width) + (1 * 230), y=(screen_height / 3) + screen_height * (161 / tk_height) + (0 * screen_height * (80 / tk_height)))
+    Button(root, text="Open\nLog Folder", font="Helvetica 10 bold", relief="raised", overrelief="solid", bg="#ebebeb", width=int(screen_width * (10 / tk_width)), height=int(screen_height * (4 / tk_height)), bd=3, padx=2, pady=2, command=open_folder_log).place(x=screen_width * (1290 / tk_width) + (2 * 230), y=(screen_height / 3) + screen_height * (161 / tk_height) + (0 * screen_height * (80 / tk_height)))
 
     chessDistortionInit()   # 왜곡 보정 초기화
+
     read_frame()        # 연속Frame loop
     root.mainloop()     # Gui를 가동시키는 loop
 
