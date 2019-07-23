@@ -33,6 +33,7 @@ judgeFlag = 0
 tactFlag = 0
 sum_tact_time = 0
 sum_tact_time_list = []
+alreadyStartFlag = 0
 
 check_barcode_area = 0
 check_year = 0
@@ -41,6 +42,7 @@ check_day = 0
 check_make_folder = 0
 check_result = 0
 pre_day = 0
+accumulation = 0
 
 # 카메라 연결
 cap = cv2.VideoCapture(0)
@@ -75,9 +77,13 @@ try:
 except:
     print("[ERROR] : please check Light module RS232")
 
+
+
 global_cnt = 0
-def timerCounter(judge, Serial_No):
+def timerCounter(judge, Serial_No, NGcnt):
     global global_cnt, storeTacttime
+    global image_label, dipole_label, rivet_label, angel_label, text_label, result_label
+
     global_cnt += 1
     print("Timer counter:", global_cnt)
     print("inside timer SN:", Serial_No)
@@ -88,35 +94,93 @@ def timerCounter(judge, Serial_No):
 
     threading.Timer(1000, timerCounter).start()  # 1000 타이머 카운트 스레드 작동
     if global_cnt > 1 and Serial_No != '':
+    # if global_cnt > 1 :
         sendSignal(judge)
         light_off()
         result_display(0, data=Serial_No)    # GUI에 시리얼번호 출력
         result_display(2, data="{} // {}:{}:{}".format(local_time, h, m, s))
         result_display(3, data=storeTacttime)
+        result_display(4)
         global_cnt = 0
+
         # 결과 저장 알림 라벨
+        try:
+            text_label.destroy()
+        except:
+            pass
         text_label = Label(root, text="image file saved\n log file saved", width=int(screen_width * (14 / tk_width)), height=int(screen_height * (2 / tk_height)), font="Helvetica 20 bold", fg="RoyalBlue")
         text_label.place(x=screen_width * (1640 / tk_width), y=screen_height * (660 / tk_height))
+
         # OK, NG 알림 라벨 출력
         if judge == 1:
+            try:
+                result_label.destroy()
+            except:
+                pass
             result_label = Label(root, text="OK", font="Helvetica 140 bold", fg="RoyalBlue")
             result_label.place(x=screen_width * (1550 / tk_width), y=screen_height * (760 / tk_height))
+
+            # Choke 합격일때
+            try:
+                rivet_label.destroy()
+            except:
+                pass
+            rivet_label = Label(root, text="0", fg="blue", bg="#ebebeb", font="Helvetica 60 bold")
+            rivet_label.place(x=screen_width * (1150 / tk_width), y=(screen_height / 3) + screen_height * (270 / tk_height) + (0 * screen_height * (80 / tk_height)), relx=0.01, rely=0.01)
+
+            # Dipole 합격일때
+            try:
+                angel_label.destroy()
+            except:
+                pass
+            angel_label = Label(root, text="0", fg="blue", bg="#ebebeb", font="Helvetica 60 bold")
+            angel_label.place(x=screen_width * (1150 / tk_width), y=(screen_height / 3) + screen_height * (395 / tk_height) + (0 * screen_height * (80 / tk_height)), relx=0.01, rely=0.01)
         elif judge == 2:
+
+            try:
+                result_label.destroy()
+            except:
+                pass
             result_label = Label(root, text="NG", font="Helvetica 140 bold", fg="red")
             result_label.place(x=screen_width * (1550 / tk_width), y=screen_height * (760 / tk_height))
+
+            # Choke 불합격일때 Debug 임시로 임의로 함.
+            temptest = 2
+            try:
+                rivet_label.destroy()
+            except:
+                pass
+            rivet_label = Label(root, text="{}".format(temptest), fg="red", bg="#ebebeb", font="Helvetica 60 bold")
+            rivet_label.place(x=screen_width * (1150 / tk_width), y=(screen_height / 3) + screen_height * (270 / tk_height) + (0 * screen_height * (80 / tk_height)), relx=0.01, rely=0.01)
+
+            # Dipole 불합격일때
+            try:
+                angel_label.destroy()
+            except:
+                pass
+            angel_label = Label(root, text="{}".format(NGcnt), fg="red", bg="#ebebeb", font="Helvetica 60 bold")
+            angel_label.place(x=screen_width * (1150 / tk_width), y=(screen_height / 3) + screen_height * (395 / tk_height) + (0 * screen_height * (80 / tk_height)), relx=0.01, rely=0.01)
     elif global_cnt > 5:
         sendSignal(2)
         light_off()
         result_display(1)
         result_display(2, data="{} // {}:{}:{}".format(local_time, h, m, s))
         result_display(3, data=storeTacttime)
+        result_display(4)
         global_cnt = 0
+
         # 결과 저장 알림 라벨
         text_label = Label(root, text="image file saved\n log file saved", width=int(screen_width * (14 / tk_width)), height=int(screen_height * (2 / tk_height)), font="Helvetica 20 bold", fg="RoyalBlue")
         text_label.place(x=screen_width * (1640 / tk_width), y=screen_height * (660 / tk_height))
         # Tact Time over 알림 라벨 출력
         result_label = Label(root, text="Over\nTact Time", font="Helvetica 65 bold", fg="red")
         result_label.place(x=screen_width * (1450 / tk_width), y=screen_height * (760 / tk_height))
+        # Label Upper 시리얼 에러일떄
+        rivet_label = Label(root, text=" X ", fg="red", bg="#ebebeb", font="Helvetica 60 bold")
+        rivet_label.place(x=screen_width * (1150 / tk_width), y=(screen_height / 3) + screen_height * (270 / tk_height) + (0 * screen_height * (80 / tk_height)), relx=0.01, rely=0.01)
+        # Label below 시리얼 에러일때 아래
+        angel_label = Label(root, text=" X ", fg="red", bg="#ebebeb", font="Helvetica 60 bold")
+        angel_label.place(x=screen_width * (1150 / tk_width), y=(screen_height / 3) + screen_height * (395 / tk_height) + (0 * screen_height * (80 / tk_height)), relx=0.01, rely=0.01)
 
         print("Serial Number Timout Error")
 
@@ -847,13 +911,14 @@ def judgeImage(img):
                 right_mid_list = []
                 pt_list = []
 
+    NGcnt = 24 - OKcnt
     print('OKcnt, NGcnt:', OKcnt, NGcnt)
     if OKcnt == 24:
         judge = 1
     else:
         judge = 2
 
-    return img, cal_img, judge
+    return img, cal_img, judge, NGcnt
 
 
 def choke_judgeImage(img):
@@ -1076,7 +1141,7 @@ readyflag = 0
 count = 0
 def checkStatusSignal(img):
     global readyflag, count, tact_time, tactFlag, sum_tact_time_list, sum_tact_time
-    global cp_final
+    global cp_final, alreadyStartFlag
 
     count = count + 1
     if count > 5:
@@ -1105,7 +1170,7 @@ def checkStatusSignal(img):
                 readyflag = 1
                 if PLC_ready[0:5] == 'ready':
                     light_on()  # Turn on the light
-
+                    alreadyStartFlag = 1
                     tactFlag = 1
 
                     # check serial Number
@@ -1114,7 +1179,7 @@ def checkStatusSignal(img):
                     print("Serial:", Serial_No)
 
                     print("이곳에 판독 함수를 작성")
-                    dipoleResult, cal_img, judge = judgeImage(img)     # result를 GUI로 이용. 리턴: 다이폴이미지, 왜곡보정이미지, 판독값
+                    dipoleResult, cal_img, judge, NGcnt = judgeImage(img)     # result를 GUI로 이용. 리턴: 다이폴이미지, 왜곡보정이미지, 판독값
                     # choke_judgeImage(cal_img)
                     # cv2.imshow('chokefinal', cp_final)
                     temp = cv2.imread('temp.png')
@@ -1122,7 +1187,8 @@ def checkStatusSignal(img):
                     print("OK 인지 NG 인지 전송")
                     # sendSignal(judge)                   # send judgement to PLC
                     # light_off()
-                    timerCounter(judge, Serial_No)
+                    print("NGcnt:", NGcnt)
+                    timerCounter(judge, Serial_No, NGcnt)
                     return [dipoleResult, temp]
     except:
         print("Test모드 실행중 - 조명시리얼, PLC시리얼을 연결해세요.")
@@ -1133,8 +1199,8 @@ def checkStatusSignal(img):
     의 형태로 함수 사용.
 '''
 def sendSignal(signal=0):
-    global tactFlag, sum_tact_time_list, sum_tact_time, storeTacttime
-
+    global tactFlag, sum_tact_time_list, sum_tact_time, storeTacttime, accumulation
+    accumulation = accumulation + 1
     signal = str(signal)
     signal = signal.encode()
     tactFlag = 0
@@ -1145,6 +1211,7 @@ def sendSignal(signal=0):
 
 # 결과를 GUI 라벨옆 Text Box에 출력
 def result_display(select, data='input data'):
+    global accumulation
 
     if select == 0:
         RV_SN.delete(0, END)
@@ -1158,6 +1225,10 @@ def result_display(select, data='input data'):
     elif select == 3:
         RV_TACT.delete(0, END)
         RV_TACT.insert(20, str(data) + " [sec]")
+    elif select == 4:
+        RV_ACC.delete(0, END)
+        RV_ACC.insert(20, str(accumulation))
+
 
 def Reformat_Image(image, ratio_w, ratio_h):
     height, width = image.shape[:2]
@@ -1257,7 +1328,7 @@ def read_frame():
 
 
 def main():
-    global root, cam1_label
+    global root, cam1_label, alreadyStartFlag
     global RV_SN, RV_TIME, RV_ACC, RV_PASS, RV_NG, RV_TACT, DA_PASS, DA_NG, DA_ACC
     global screen_width, screen_height, tk_width, tk_height
     global dipole_label, choke_label
@@ -1298,7 +1369,7 @@ def main():
     for i in range(len(name)):
         Label(root, text=name[i], height=int(screen_height * (5 / tk_height)), width=int(screen_width * (17 / tk_width)), fg="red", relief="groove", bg="#ebebeb", font="Helvetica 9 bold").place(x=screen_width * (95 / tk_width), y=(screen_height / 3) + screen_height * (140 / tk_height) + (i * screen_height * (80 / tk_height)), relx=0.01, rely=0.01)
 
-    # 3rd 라인 긴 Text입력 상자 3개
+    # 3rd 라인 긴 Text입력 상자 4개
     RV_SN = Entry(root, width=int(screen_width * (19 / tk_width)), relief="groove", font="Helvetica 50 bold")
     RV_SN.place(x=screen_width * (218 / tk_width), y=(screen_height / 3) + screen_height * (140 / tk_height) + (0 * screen_height * (80 / tk_height)), relx=0.01, rely=0.01)
 
@@ -1308,18 +1379,21 @@ def main():
     RV_TACT = Entry(root, width=int(screen_width * (19 / tk_width)), relief="groove", font="Helvetica 50 bold")
     RV_TACT.place(x=screen_width * (218 / tk_width), y=(screen_height / 3) + screen_height * (140 / tk_height) + (2 * screen_height * (80 / tk_height)), relx=0.01, rely=0.01)
 
-    # 4th 라인 짧은 Text입력 상자 6개
-    RV_ACC = Entry(root, width=int(screen_width * (7 / tk_width)), relief="groove", font="Helvetica 50 bold")
-    RV_ACC.place(x=screen_width * (322 / tk_width), y=(screen_height / 3) + screen_height * (138 / tk_height) + (3 * screen_height * (80 / tk_height)), relx=0.01, rely=0.01)
+    RV_ACC = Entry(root, width=int(screen_width * (19 / tk_width)), relief="groove", font="Helvetica 50 bold")
+    RV_ACC.place(x=screen_width * (218 / tk_width), y=(screen_height / 3) + screen_height * (140 / tk_height) + (3 * screen_height * (80 / tk_height)), relx=0.01, rely=0.01)
 
+    # RV_ACC = Entry(root, width=int(screen_width * (7 / tk_width)), relief="groove", font="Helvetica 50 bold")
+    # RV_ACC.place(x=screen_width * (322 / tk_width), y=(screen_height / 3) + screen_height * (138 / tk_height) + (3 * screen_height * (80 / tk_height)), relx=0.01, rely=0.01)
+
+    # 4th 라인 짧은 Text입력 상자 4개
     RV_PASS = Entry(root, width=int(screen_width * (7 / tk_width)), relief="groove", font="Helvetica 50 bold")
     RV_PASS.place(x=screen_width * (322 / tk_width), y=(screen_height / 3) + screen_height * (140 / tk_height) + (4 * screen_height * (80 / tk_height)), relx=0.01, rely=0.01)
 
     RV_NG = Entry(root, width=int(screen_width * (7 / tk_width)), relief="groove", font="Helvetica 50 bold")
     RV_NG.place(x=screen_width * (322 / tk_width),y=(screen_height / 3) + screen_height * (140 / tk_height) + (5 * screen_height * (80 / tk_height)), relx=0.01, rely=0.01)
 
-    DA_ACC = Entry(root, width=int(screen_width * (7 / tk_width)), relief="groove", font="Helvetica 50 bold")
-    DA_ACC.place(x=screen_width * (662 / tk_width), y=(screen_height / 3) + screen_height * (140 / tk_height) + (3 * screen_height * (80 / tk_height)), relx=0.01, rely=0.01)
+    # DA_ACC = Entry(root, width=int(screen_width * (7 / tk_width)), relief="groove", font="Helvetica 50 bold")
+    # DA_ACC.place(x=screen_width * (662 / tk_width), y=(screen_height / 3) + screen_height * (140 / tk_height) + (3 * screen_height * (80 / tk_height)), relx=0.01, rely=0.01)
 
     DA_PASS = Entry(root, width=int(screen_width * (7 / tk_width)), relief="groove", font="Helvetica 50 bold")
     DA_PASS.place(x=screen_width * (662 / tk_width), y=(screen_height / 3) + screen_height * (140 / tk_height) + (4 * screen_height * (80 / tk_height)), relx=0.01, rely=0.01)
@@ -1328,9 +1402,9 @@ def main():
     DA_NG.place(x=screen_width * (662 / tk_width), y=(screen_height / 3) + screen_height * (140 / tk_height) + (5 * screen_height * (80 / tk_height)), relx=0.01, rely=0.01)
 
     # 5th 6개의 하위목록 라벨 생성.
-    for i in range(3):
-        Label(root, text="Choke", height=int(screen_height * (5 / tk_height)), width=int(screen_width * (14 / tk_width)), fg="red", relief="groove", bg="#ebebeb", font="Helvetica 9 bold").place(x=screen_width * (219 / tk_width), y=(screen_height / 3) + screen_height * (139 / tk_height) + ((i + 3) * screen_height * (80 / tk_height)), relx=0.01, rely=0.01)
-        Label(root, text="Dipole", height=int(screen_height * (5 / tk_height)), width=int(screen_width * (14 / tk_width)), fg="red", relief="groove", bg="#ebebeb", font="Helvetica 9 bold").place(x=screen_width * (559 / tk_width), y=(screen_height / 3) + screen_height * (139 / tk_height) + ((i + 3) * screen_height * (80 / tk_height)), relx=0.01, rely=0.01)
+    for i in range(2):
+        Label(root, text="Choke", height=int(screen_height * (5 / tk_height)), width=int(screen_width * (14 / tk_width)), fg="red", relief="groove", bg="#ebebeb", font="Helvetica 9 bold").place(x=screen_width * (219 / tk_width), y=(screen_height / 3) + screen_height * (139 / tk_height) + ((i + 4) * screen_height * (80 / tk_height)), relx=0.01, rely=0.01)
+        Label(root, text="Dipole", height=int(screen_height * (5 / tk_height)), width=int(screen_width * (14 / tk_width)), fg="red", relief="groove", bg="#ebebeb", font="Helvetica 9 bold").place(x=screen_width * (559 / tk_width), y=(screen_height / 3) + screen_height * (139 / tk_height) + ((i + 4) * screen_height * (80 / tk_height)), relx=0.01, rely=0.01)
 
     # 6th 오른쪽 전체박스 생성
     Label(root, height=int(screen_height * (25 / tk_height)), width=int(screen_width * (90 / tk_width)), relief="groove", bg="#ebebeb", font="Helvetica 13 bold").place(x=screen_width * (970 / tk_width), y=(screen_height / 3) + screen_height * (140 / tk_height) + (0 * screen_height * (80 / tk_height)), relx=0.01, rely=0.01)
@@ -1357,6 +1431,18 @@ def main():
 
     # 10th Dipole Counter 라벨
     Label(root, text="Dipole Count\n(NG Count)", height=int(screen_height * (5 / tk_height)), width=int(screen_width * (13 / tk_width)), fg="red", relief="groove", bg="#ebebeb", font="Helvetica 13 bold").place(x=screen_width * (970 / tk_width), y=(screen_height / 3) + screen_height * (395 / tk_height) + (0 * screen_height * (80 / tk_height)), relx=0.01, rely=0.01)
+
+    # 11th 기준 갯수 라벨 - Choke 합격 기준 갯수
+    Label(root, text="/", fg="black", bg="#ebebeb",font="Helvetica 60 bold").place(x=screen_width * (1250 / tk_width), y=(screen_height / 3) + screen_height * (270 / tk_height) + (0 * screen_height * (80 / tk_height)), relx=0.01, rely=0.01)
+    Label(root, text="{}".format(5), fg="black", bg="#ebebeb", font="Helvetica 60 bold").place(x=screen_width * (1300 / tk_width), y=(screen_height / 3) + screen_height * (270 / tk_height) + (0 * screen_height * (80 / tk_height)), relx=0.01, rely=0.01)
+    # Dipole 합격 기준 갯수
+    Label(root, text="24", fg="black", bg="#ebebeb",font="Helvetica 60 bold").place(x=screen_width * (1300 / tk_width), y=(screen_height / 3) + screen_height * (395 / tk_height) + (0 * screen_height * (80 / tk_height)), relx=0.01, rely=0.01)
+    Label(root, text="/", fg="black", bg="#ebebeb",font="Helvetica 60 bold").place(x=screen_width * (1250 / tk_width), y=(screen_height / 3) + screen_height * (395 / tk_height) + (0 * screen_height * (80 / tk_height)), relx=0.01, rely=0.01)
+
+    if alreadyStartFlag == 1:
+        # Detecting... 라벨
+        Label(root, text="DETECTING...", height=int(screen_height * (5 / tk_height)), width=int(screen_width * (13 / tk_width)), fg="black", bg="#ebebeb", font="Helvetica 40 bold").place(x=screen_width * (1400 / tk_width), y=(screen_height / 3) + screen_height * (-300 / tk_height) + (0 * screen_height * (80 / tk_height)), relx=0.01, rely=0.01)
+        Label(root, text="DETECTING...", height=int(screen_height * (5 / tk_height)), width=int(screen_width * (13 / tk_width)), fg="black", bg="#ebebeb", font="Helvetica 40 bold").place(x=screen_width * (800 / tk_width), y=(screen_height / 3) + screen_height * (-300 / tk_height) + (0 * screen_height * (80 / tk_height)), relx=0.01, rely=0.01)
 
     chessDistortionInit()   # 왜곡 보정 초기화
 
