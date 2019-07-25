@@ -13,9 +13,7 @@ import re
 import math
 import imutils
 
-
-def nothing(x):
-    pass
+chokeStandardAngle = 0.0024
 
 
 '''
@@ -26,6 +24,8 @@ def nothing(x):
     :return
         채도향상된이미지
 '''
+
+
 def increase_brightness(img, value):
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     h, s, v = cv2.split(hsv)
@@ -112,81 +112,9 @@ def calibration(img):
 
 
 '''
-    Dipole 부분을 탐지하여 마스킹씌워 리턴
-    
-    :param
-        원본이미지
-    :return
-         Dipole부분 마스크 Threshold 씌어진 Binary 이미지
-'''
-def square_img_filtering(img):
-    img = increase_brightness(img, 255)
-    img = cv2.GaussianBlur(img, (11, 11), 0)  # Blur 필터링
-
-    # cv2.imshow('asdf', img)
-
-    frame2 = img.copy()  # 영상원본
-
-    gray_frame = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
-    blue, green, red = cv2.split(img)  # 원본에서 BGR 분리
-    frame_hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)  # HSV(색상, 채도, 명도) 분리
-    h, s, v = cv2.split(frame_hsv)  # 분리후 저장.
-
-    frame_hls = cv2.cvtColor(img, cv2.COLOR_BGR2HLS)  # BGR -> HLS로
-    H, L, S = cv2.split(frame_hls)  # H,L,S 분리
-    kernel = np.ones((3, 3), np.uint8)
-
-    _, gray1 = cv2.threshold(gray_frame, 255, 255, cv2.THRESH_BINARY_INV)
-    _, blue1 = cv2.threshold(blue, 240, 255, cv2.THRESH_BINARY_INV)
-    _, green1 = cv2.threshold(green, 255, 255, cv2.THRESH_BINARY_INV)
-    _, red1 = cv2.threshold(red, 255, 255, cv2.THRESH_BINARY_INV)
-    _, h1 = cv2.threshold(h, 36, 255, cv2.THRESH_BINARY_INV)
-    _, s1 = cv2.threshold(s, 106, 255, cv2.THRESH_BINARY_INV)
-    _, v1 = cv2.threshold(v, 255, 255, cv2.THRESH_BINARY_INV)
-    _, H1 = cv2.threshold(H, 49, 255, cv2.THRESH_BINARY_INV)
-    _, L1 = cv2.threshold(L, 255, 255, cv2.THRESH_BINARY_INV)
-    _, S1 = cv2.threshold(S, 255, 255, cv2.THRESH_BINARY_INV)
-
-    _, blue_ = cv2.threshold(blue, 138, 255, cv2.THRESH_BINARY)
-    _, green_ = cv2.threshold(green, 149, 255, cv2.THRESH_BINARY)
-    _, red_ = cv2.threshold(red, 51, 255, cv2.THRESH_BINARY)
-    _, h_ = cv2.threshold(h, 134, 255, cv2.THRESH_BINARY)
-    _, s_ = cv2.threshold(s, 134, 255, cv2.THRESH_BINARY)
-    _, v_ = cv2.threshold(v, 222, 255, cv2.THRESH_BINARY)
-    _, H_ = cv2.threshold(H, 122, 255, cv2.THRESH_BINARY)
-    _, L_ = cv2.threshold(L, 123, 255, cv2.THRESH_BINARY)
-    _, S_ = cv2.threshold(S, 123, 255, cv2.THRESH_BINARY)
-
-    final_mask = gray1
-    final_mask = cv2.bitwise_and(final_mask, blue1)
-    final_mask = cv2.bitwise_and(final_mask, green1)
-    final_mask = cv2.bitwise_and(final_mask, red1)
-    final_mask = cv2.bitwise_and(final_mask, h1)
-    final_mask = cv2.bitwise_and(final_mask, s1)
-    final_mask = cv2.bitwise_and(final_mask, v1)
-    final_mask = cv2.bitwise_and(final_mask, H1)
-    final_mask = cv2.bitwise_and(final_mask, L1)
-    final_mask = cv2.bitwise_and(final_mask, S1)
-
-    final_mask = cv2.bitwise_and(final_mask, blue_)
-    final_mask = cv2.bitwise_and(final_mask, green_)
-    final_mask = cv2.bitwise_and(final_mask, red_)
-    final_mask = cv2.bitwise_and(final_mask, v_)
-
-    final_mask = cv2.erode(final_mask, kernel, iterations=10)
-    final_mask = cv2.dilate(final_mask, kernel, iterations=15)
-    result = cv2.bitwise_and(frame2, frame2, mask=final_mask)
-
-    # cv2.imshow('bbbbbbbbbb',final_mask)
-
-    return final_mask
-
-
-'''
     원본 이미지 필터링
 '''
-def img_filtering(img):
+def choke_img_filtering(img):
 
     img = increase_brightness(img, 255)         # 채도를 최대로 조정.
     img = cv2.GaussianBlur(img, (7, 7), 0)      # Blur 필터링
@@ -202,27 +130,6 @@ def img_filtering(img):
     frame_hls = cv2.cvtColor(img, cv2.COLOR_BGR2HLS)  # BGR -> HLS로
     H, L, S = cv2.split(frame_hls)  # H,L,S 분리
     kernel = np.ones((3, 3), np.uint8)
-
-    # _, gray1 = cv2.threshold(gray_frame, 255, 255, cv2.THRESH_BINARY_INV)
-    # _, blue1 = cv2.threshold(blue, 255, 255, cv2.THRESH_BINARY_INV)
-    # _, green1 = cv2.threshold(green, 255, 255, cv2.THRESH_BINARY_INV)
-    # _, red1 = cv2.threshold(red, 255, 255, cv2.THRESH_BINARY_INV)
-    # _, h1 = cv2.threshold(h, 39, 255, cv2.THRESH_BINARY_INV)
-    # _, s1 = cv2.threshold(s, 120, 255, cv2.THRESH_BINARY_INV)
-    # _, v1 = cv2.threshold(v, 255, 255, cv2.THRESH_BINARY_INV)
-    # _, H1 = cv2.threshold(H, 255, 255, cv2.THRESH_BINARY_INV)
-    # _, L1 = cv2.threshold(L, 255, 255, cv2.THRESH_BINARY_INV)
-    # _, S1 = cv2.threshold(S, 255, 255, cv2.THRESH_BINARY_INV)
-    #
-    # _, blue_ = cv2.threshold(blue, 40, 255, cv2.THRESH_BINARY)
-    # _, green_ = cv2.threshold(green, 29, 255, cv2.THRESH_BINARY)
-    # _, red_ = cv2.threshold(red, 20, 255, cv2.THRESH_BINARY)
-    # _, h_ = cv2.threshold(h, 125, 255, cv2.THRESH_BINARY)
-    # _, s_ = cv2.threshold(s, 119, 255, cv2.THRESH_BINARY)
-    # _, v_ = cv2.threshold(v, 37, 255, cv2.THRESH_BINARY)
-    # _, H_ = cv2.threshold(H, 138, 255, cv2.THRESH_BINARY)
-    # _, L_ = cv2.threshold(L, 113, 255, cv2.THRESH_BINARY)
-    # _, S_ = cv2.threshold(S, 123, 255, cv2.THRESH_BINARY)
 
     _, gray1 = cv2.threshold(gray_frame, 250, 255, cv2.THRESH_BINARY_INV)
     _, blue1 = cv2.threshold(blue, 230, 255, cv2.THRESH_BINARY_INV)
@@ -261,12 +168,7 @@ def img_filtering(img):
     final_mask = cv2.bitwise_and(final_mask, red_)
     final_mask = cv2.bitwise_and(final_mask, v_)
 
-    # final_mask = cv2.erode(final_mask, kernel, iterations=3)   # 사각형만 남기도록 깍음
     final_mask = cv2.dilate(final_mask, kernel, iterations=3)  # 정리된 사각형을 다시 확대
-
-    result = cv2.bitwise_and(frame2, frame2, mask=final_mask)
-
-    # cv2.imshow('c', result)
 
     return final_mask
 
@@ -289,11 +191,6 @@ def find_outline(img):
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     gray = cv2.GaussianBlur(gray, (3, 3), 0)
 
-    # # 들어온 이미지 확인용.
-    # cv2.imshow('img', cv2.resize(img, (1280, 960)))
-    # cv2.waitKey(0)
-
-    # perform edge detection, then perform a dilation + erosion to
     # close gaps in between object edges
     edged = cv2.Canny(gray, 30, 30)
     edged = cv2.dilate(edged, None, iterations=1)
@@ -323,7 +220,6 @@ def find_outline(img):
     idx = contours_area_list.index(MAX)
     cnt = contours[idx]
 
-    # print(cnt)
     box = cv2.minAreaRect(cnt)
     box = cv2.cv.BoxPoints(box) if imutils.is_cv2() else cv2.boxPoints(box)
     box = np.array(box, dtype="int")
@@ -341,17 +237,11 @@ def find_outline(img):
         globals()['x{}'.format(cnt)], globals()['y{}'.format(cnt)] = math.ceil(int(xA) * ratio_x), math.ceil(int(yA) * ratio_y)
         # globals()['x{}'.format(cnt)], globals()['y{}'.format(cnt)] = math.ceil(int(xA)), math.ceil(int(yA))
         # draw circles corresponding to the current points and
-        cv2.circle(img1, (int(xA), int(yA)), 3, (0, 0, 255), -1)
-        cv2.putText(img1, "({},{})".format(xA, yA), (int(xA - 80), int(yA + 10)), cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (0, 255, 0), 1)
+        # cv2.circle(img1, (int(xA), int(yA)), 3, (0, 0, 255), -1)
+        # cv2.putText(img1, "({},{})".format(xA, yA), (int(xA - 80), int(yA + 10)), cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (0, 255, 0), 1)
         coordListx.append(int(xA))
         coordListy.append(int(yA))
         cnt += 1
-
-    # # 2개의 resized 된 좌표 리턴
-    # print(coordListx)
-    # print(coordListy)
-    # print(type(coordListx[0]))
-    # print(max(coordListx))
 
     list_point = [[x1, y1], [x2, y2], [x3, y3], [x4, y4]]
     #print("1. list_point", list_point)
@@ -362,15 +252,8 @@ def find_outline(img):
     for i in range(4):
         cv2.circle(img1, (list_point[i][0], list_point[i][1]), 3, (0, 0, 255), -1)
 
-    # 선택된 좌표 보여줌
-    # cv2.imshow('coord', img1)
-    print(list_point[0], list_point[3])
-
     return min(coordListx), min(coordListy), max(coordListx), max(coordListy)
 
-    # # 원본크기의 배율 좌표
-    # return list_point[0][0], list_point[0][1], list_point[2][0], list_point[2][1], \
-    #        list_point[1][0], list_point[1][1], list_point[3][0], list_point[3][1], img1
 
 '''
     원본이미지, x1, y1 좌표, x2, y2 좌표
@@ -381,7 +264,6 @@ def edge_mask(img, x1, y1, x2, y2):
 
     # 좌표값 만큼 마스크
     masked = np.zeros(img.shape[:2], np.uint8)
-    print((x1, y1), (x2, y2))
     masked = cv2.rectangle(masked, (x1, y1), (x2, y2), (255, 255, 255), -1)
     return masked
 
@@ -419,11 +301,6 @@ def find_area(masked_img, img):
 
                 cv2.rectangle(chokemask, (x, y), (x+w, y+h), (255, 255, 255), -1)
 
-                # rect = cv2.minAreaRect(contour)
-                # box = cv2.boxPoints(rect)
-                # box = np.int0(box)
-                #cv2.drawContours(img, [box], 0, (255, 255, 0), 2)
-
                 # area = cv2.contourArea(contour)       # 면적값 출력
                 # print(area)
                 mom = contour
@@ -439,10 +316,6 @@ def find_area(masked_img, img):
         finalchokemask = onlychokeFiltering(onlyChoke)
         detect_LineDegree(img , finalchokemask)
 
-        # cv2.imwrite('b.png', chokemask)
-        # cv2.imshow('chokmask', chokemask)
-        cv2.imshow('rrreal result', img)
-        # cv2.imshow('onlyChoke', onlyChoke)
         return centerPoint
 
 '''
@@ -531,27 +404,35 @@ def onlychokeFiltering(onlychoke):
                 cv2.drawContours(frame2, contour, -1, (0, 255, 0), 1)
                 cv2.circle(frame2, (cx_origin, cy_origin), 5, (0, 255, 255), -1)  # 중심 좌표 표시
 
-    cv2.imshow('Masked Testoutput', chokerecMask)
-    cv2.imshow('TestOutput', frame2)
+    # cv2.imshow('Masked Testoutput', chokerecMask)
+    # cv2.imshow('TestOutput', frame2)
     return chokerecMask
 
 
 
 '''
     최종 평균 라인을 검출하여 디스플레이 함.
-    
 '''
-def display_final(img, x1,y1, x2,y2, final_function):
-    cv2.line(img, (x1, y1), (x2, y2), (0, 255, 255), 2)
-    cv2.putText(img, final_function, (x1+500, y1-30), cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (255, 255, 0), 2)
-    cv2.imshow("FFianl", img)
-    return img
+def display_final(finalimg, x1,y1, x2,y2, final_function):
+    global cp_final
 
+    cv2.line(finalimg, (x1, y1), (x2, y2), color, 2)
+    cv2.putText(finalimg, final_function, (x1+500, y1-30), cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, color, 2)
+    cv2.imshow("FFianl", finalimg)
 
+    cp_final = finalimg.copy()
+    return finalimg
+
+chokeTotal = 0
+chokeNG = 0
+chokeOK = 0
 # 원본, choke마스크이미지(이진화)
 def detect_LineDegree(img, final_mask):
+    global color, chokeNG, chokeOK, chokeTotal
+
     flag = 0
     save_function_list = []
+    save_degree_list = []
     final_end_ptList = []
 
     cp_img = img.copy()
@@ -586,7 +467,7 @@ def detect_LineDegree(img, final_mask):
                 # 1차 함수표현 y = ax * b
                 a = (righty - lefty) / (cp_img.shape[1] - 1)
                 b = lefty
-                cv2.putText(img, "y = ({})x + {}".format(a, b), (cx_origin-200, cy_origin-30), cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (0, 255, 0), 2)    # 좌표의 1차 함수방정식
+                # cv2.putText(img, "y = ({})x + {}".format(a, b), (cx_origin-200, cy_origin-30), cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (0, 255, 0), 2)    # 좌표의 1차 함수방정식
 
                 try:
                     if abs(bf_cy - cy_origin) > 100 :     # y좌표가 급격히 바뀔때 하나의 함수로
@@ -604,7 +485,7 @@ def detect_LineDegree(img, final_mask):
                 asum = sum(aList)
                 bsum = sum(bList)
 
-                cv2.putText(img, "y = ({})x + {}".format((asum/cnt), (bsum/cnt)), (cx_origin-200, cy_origin-10), cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (0, 0, 255), 2)   # 평균을 구한 일차함수
+                # cv2.putText(img, "y = ({})x + {}".format((asum/cnt), (bsum/cnt)), (cx_origin-200, cy_origin-10), cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (0, 0, 255), 2)   # 평균을 구한 일차함수
 
                 print("리스트값", aList, bList)
                 print("총합값", asum, bsum)
@@ -614,37 +495,47 @@ def detect_LineDegree(img, final_mask):
                 # print("{} / {} = {}".format(bsum, cnt, int(bsum / (cnt))))
                 # print("y절편값:", int(bsum / (cnt)))
 
+
+
                 save_function_list.append("y = ({})x + {}".format((asum / cnt), (bsum / cnt)))
+                save_degree_list.append(asum / cnt)
+
                 print(save_function_list)
                 final_end_ptList.append([(0, int(bsum / (cnt))), ( int(cp_img.shape[1] - 1), int(((asum / (cnt)) * cp_img.shape[1] - 1) + (bsum / (cnt))))])
                 print(final_end_ptList)
                 print("---")
 
                 # 평균을 낸 값.  (오른쪽, 왼쪽)
-                cv2.line(img, (0, int(bsum / (cnt))), ( int(cp_img.shape[1] - 1), int(((asum / (cnt)) * cp_img.shape[1] - 1) + (bsum / (cnt)))) , (0, 255, 255), 1)
+                # cv2.line(img, (0, int(bsum / (cnt))), ( int(cp_img.shape[1] - 1), int(((asum / (cnt)) * cp_img.shape[1] - 1) + (bsum / (cnt)))) , (0, 255, 255), 1)
 
                 if flag == 1:
                     print("==== flag ====")
-                    # print(count)
-                    # print(save_function_list[count-1])
-                    # print(final_end_ptList[count-1][0])
-                    # print(final_end_ptList[count-1][1])
+
+                    if abs(save_degree_list[count - 1]) > chokeStandardAngle:
+                        chokeNG = chokeNG + 1
+                        color = (0, 0, 255)
+                    else:
+                        chokeOK = chokeOK + 1
+                        color = (0, 255, 255)
                     display_final(showimg, final_end_ptList[count-1][0][0], final_end_ptList[count-1][0][1], final_end_ptList[count-1][1][0], final_end_ptList[count-1][1][1], save_function_list[count-1])
                     print("==== flag ====")
                     flag = 0
 
                 cnt = cnt + 1
                 count = count + 1
-
-                # cv2.imshow('321321321', showimg)
-                # cv2.imshow('123123123', img)
-                cv2.waitKey(1)
+        if abs(save_degree_list[count - 1]) > chokeStandardAngle:
+            chokeNG = chokeNG + 1
+            color = (0, 0, 255)
+        else:
+            chokeOK = chokeOK + 1
+            color = (0, 255, 255)
+        chokeTotal = chokeNG + chokeOK
         display_final(showimg, final_end_ptList[count - 1][0][0], final_end_ptList[count - 1][0][1], final_end_ptList[count - 1][1][0], final_end_ptList[count - 1][1][1], save_function_list[count - 1])
 
 def MaskFromCircle_bin(img):
     img_cp = img.copy()
 
-    cv2.imshow('a', img)
+    # cv2.imshow('a', img)
 
     img = increase_brightness(img, 100)
     img = cv2.GaussianBlur(img, (3, 3), 0)
@@ -659,7 +550,7 @@ def MaskFromCircle_bin(img):
     th2 = cv2.erode(th2, kernel, iterations=1)
     circles = cv2.HoughCircles(th2, cv2.HOUGH_GRADIENT, 1, 13, param1=110, param2=9, minRadius=9, maxRadius=11)
 
-    cv2.imshow('b', th2)
+    # cv2.imshow('b', th2)
 
     # 외곽선 탐지하여 꼭지점 2개좌표 리턴.
     leftup, leftdn, rightup, rightdn = find_outline(img)
@@ -705,12 +596,10 @@ def judgeImage(img):
 
     # 제품영역 외 모든 부분 마스크
     masked_edge_img = cv2.bitwise_and(img, img, mask=masked_edge)
-    cv2.imshow('masked_edge', masked_edge_img)
+    # cv2.imshow('masked_edge', masked_edge_img)
 
     # 제품외 영역 제외 + Dipole 부분 마스크 = Choke 마스크만 남김.
-    line_alive = img_filtering(img)
-    # rec_alive = square_img_filtering(masked_edge_img)
-    # rec_alive = cv2.bitwise_not(rec_alive)
+    line_alive = choke_img_filtering(img)
     rec_alive = MaskFromCircle_bin(masked_edge_img)
 
     rec_alive_masked = cv2.bitwise_and(line_alive, line_alive, mask=rec_alive)
@@ -720,25 +609,14 @@ def judgeImage(img):
     msk_result = cv2.dilate(msk_result, kernel, iterations=6)  # 정리된 사각형을 다시 확대
     msk_result = cv2.erode(msk_result, kernel, iterations=6)  # 사각형만 남기도록 깍음
 
-    cv2.imshow('msk_result', msk_result)
-
-    result = find_area(msk_result, img)
-
-
-    # gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    # # gray = cv2.GaussianBlur(gray, (5, 5), 0)
-    # #edges = cv2.Canny(gray, 100, 200)
-
-
-    cv2.imshow('line', line_alive)
-    cv2.imshow('rec', rec_alive)
-    # cv2.waitKey(0)
+    find_area(msk_result, img)
 
     return img
 
 
 def main():
     global objpoints, imgpoints, resolution
+    global finalimg
 
     # 체스판으로 이미지 보정.
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
@@ -787,7 +665,10 @@ def main():
             # print(k)
         elif k == ord('a') or k == ord('A'):  # a 키를 눌렀을 때 키보드 이벤트 캡쳐, 판독.
             result = judgeImage(img)
+            cv2.imshow("reall fianal", cp_final)
 
+            global color, chokeNG, chokeOK, chokeTotal
+            print("최종 판결!", chokeOK, chokeNG, chokeTotal)
 
             print("현재 판독 이미지를 출력합니다.")
         else:
