@@ -34,6 +34,7 @@ tactFlag = 0
 sum_tact_time = 0
 sum_tact_time_list = []
 alreadyStartFlag = 0
+dipoleStatusFlag = 0
 
 check_barcode_area = 0
 check_year = 0
@@ -43,6 +44,8 @@ check_make_folder = 0
 check_result = 0
 pre_day = 0
 accumulation = 0
+dipoleOKaccum = 0
+dipoleNGaccum = 0
 
 # 카메라 연결
 cap = cv2.VideoCapture(0)
@@ -77,12 +80,16 @@ try:
 except:
     print("[ERROR] : please check Light module RS232")
 
+# ** 초크 기울기 각의 기준 각도 설정 !!!!!!!!!!!!!!!! 사용자 지정
+chokeStandardAngle = 0.0024
 
 
 global_cnt = 0
-def timerCounter(judge, Serial_No, NGcnt):
+def timerCounter(dipolejudge, Serial_No, NGcnt):
     global global_cnt, storeTacttime
     global image_label, dipole_label, rivet_label, angel_label, text_label, result_label
+    global color, chokeNG, chokeOK, chokeTotal
+    global chokeNGacum, chokeOKacum
 
     global_cnt += 1
     print("Timer counter:", global_cnt)
@@ -93,14 +100,25 @@ def timerCounter(judge, Serial_No, NGcnt):
     yy,mm,dd,h,m,s = check_time_value()
 
     threading.Timer(1000, timerCounter).start()  # 1000 타이머 카운트 스레드 작동
-    if global_cnt > 1 and Serial_No != '':
-    # if global_cnt > 1 :
+
+    # 시리얼번호를 읽고 정상 판독을 했을때 OK인지 NG인지
+    # if global_cnt > 1 and Serial_No != '':
+    if global_cnt > 1 :
+
+        if dipolejudge == 1 and chokeTotal == 5:
+            judge = 1
+        else:
+            judge = 2
+
         sendSignal(judge)
         light_off()
         result_display(0, data=Serial_No)    # GUI에 시리얼번호 출력
         result_display(2, data="{} // {}:{}:{}".format(local_time, h, m, s))
         result_display(3, data=storeTacttime)
         result_display(4)
+        result_display(5)   # Dipole OK, NG 카운팅
+        result_display(6)
+
         global_cnt = 0
 
         # 결과 저장 알림 라벨
@@ -145,28 +163,45 @@ def timerCounter(judge, Serial_No, NGcnt):
             result_label.place(x=screen_width * (1550 / tk_width), y=screen_height * (760 / tk_height))
 
             # Choke 불합격일때 Debug 임시로 임의로 함.
-            temptest = 2
+            # chokeNG = 0     # <= 임시로 NG갯수를 집어 넣음. choke 완성되면 지워버리기, 전역변수이기 때문에
+            # chokeOK = 5     # 임시로~
+
+            print("whatthe",chokeNG)
+
             try:
                 rivet_label.destroy()
             except:
                 pass
-            rivet_label = Label(root, text="{}".format(temptest), fg="red", bg="#ebebeb", font="Helvetica 60 bold")
-            rivet_label.place(x=screen_width * (1150 / tk_width), y=(screen_height / 3) + screen_height * (270 / tk_height) + (0 * screen_height * (80 / tk_height)), relx=0.01, rely=0.01)
+            if chokeTotal != 5:
+                rivet_label = Label(root, text="{}".format(chokeTotal), fg="red", bg="#ebebeb", font="Helvetica 60 bold")
+                rivet_label.place(x=screen_width * (1150 / tk_width), y=(screen_height / 3) + screen_height * (270 / tk_height) + (0 * screen_height * (80 / tk_height)), relx=0.01, rely=0.01)
+            else:
+                rivet_label = Label(root, text="0", fg="blue", bg="#ebebeb", font="Helvetica 60 bold")
+                rivet_label.place(x=screen_width * (1150 / tk_width), y=(screen_height / 3) + screen_height * (270 / tk_height) + (0 * screen_height * (80 / tk_height)), relx=0.01, rely=0.01)
 
             # Dipole 불합격일때
             try:
                 angel_label.destroy()
             except:
                 pass
-            angel_label = Label(root, text="{}".format(NGcnt), fg="red", bg="#ebebeb", font="Helvetica 60 bold")
-            angel_label.place(x=screen_width * (1150 / tk_width), y=(screen_height / 3) + screen_height * (395 / tk_height) + (0 * screen_height * (80 / tk_height)), relx=0.01, rely=0.01)
+            if dipoleStatusFlag == 1:
+                angel_label = Label(root, text="0", fg="blue", bg="#ebebeb", font="Helvetica 60 bold")
+                angel_label.place(x=screen_width * (1150 / tk_width), y=(screen_height / 3) + screen_height * (395 / tk_height) + (0 * screen_height * (80 / tk_height)), relx=0.01, rely=0.01)
+            else:
+                angel_label = Label(root, text="{}".format(NGcnt), fg="red", bg="#ebebeb", font="Helvetica 60 bold")
+                angel_label.place(x=screen_width * (1150 / tk_width), y=(screen_height / 3) + screen_height * (395 / tk_height) + (0 * screen_height * (80 / tk_height)), relx=0.01, rely=0.01)
+    # TIME OUT 일때.
     elif global_cnt > 5:
+        # chokeNGacum = chokeNGacum + 1       # 초크NG갯수 증가시킴.
+        
         sendSignal(2)
         light_off()
         result_display(1)
         result_display(2, data="{} // {}:{}:{}".format(local_time, h, m, s))
         result_display(3, data=storeTacttime)
         result_display(4)
+        result_display(5)   # dipole OK, NG 카운팅
+        result_display(6)
         global_cnt = 0
 
         # 결과 저장 알림 라벨
@@ -176,9 +211,17 @@ def timerCounter(judge, Serial_No, NGcnt):
         result_label = Label(root, text="Over\nTact Time", font="Helvetica 65 bold", fg="red")
         result_label.place(x=screen_width * (1450 / tk_width), y=screen_height * (760 / tk_height))
         # Label Upper 시리얼 에러일떄
+        try:
+            rivet_label.destroy()
+        except:
+            pass
         rivet_label = Label(root, text=" X ", fg="red", bg="#ebebeb", font="Helvetica 60 bold")
         rivet_label.place(x=screen_width * (1150 / tk_width), y=(screen_height / 3) + screen_height * (270 / tk_height) + (0 * screen_height * (80 / tk_height)), relx=0.01, rely=0.01)
         # Label below 시리얼 에러일때 아래
+        try:
+            angel_label.destroy()
+        except:
+            pass
         angel_label = Label(root, text=" X ", fg="red", bg="#ebebeb", font="Helvetica 60 bold")
         angel_label.place(x=screen_width * (1150 / tk_width), y=(screen_height / 3) + screen_height * (395 / tk_height) + (0 * screen_height * (80 / tk_height)), relx=0.01, rely=0.01)
 
@@ -622,18 +665,24 @@ def onlychokeFiltering(onlychoke):
     최종 평균 라인을 검출하여 디스플레이 함.
 '''
 def display_final(finalimg, x1,y1, x2,y2, final_function):
-    global cp_final
-    cv2.line(finalimg, (x1, y1), (x2, y2), (0, 255, 255), 2)
-    cv2.putText(finalimg, final_function, (x1+500, y1-30), cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (255, 255, 0), 2)
-    # cv2.imshow("FFianl", finalimg)
+    global cp_final, color
+
+    cv2.line(finalimg, (x1, y1), (x2, y2), color, 2)
+    cv2.putText(finalimg, final_function, (x1+500, y1-30), cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, color, 2)
+    cv2.imshow("FFianl", finalimg)
     cp_final = finalimg.copy()
     return finalimg
 
-
+chokeTotal = 0
+chokeNG = 0
+chokeOK = 0
 # 원본, choke마스크이미지(이진화)
 def detect_LineDegree(img, final_mask):
+    global color, chokeNG, chokeOK, chokeTotal
+
     flag = 0
     save_function_list = []
+    save_degree_list = []
     final_end_ptList = []
 
     cp_img = img.copy()
@@ -685,20 +734,36 @@ def detect_LineDegree(img, final_mask):
                 asum = sum(aList)
                 bsum = sum(bList)
 
-                cv2.putText(img, "y = ({})x + {}".format((asum/cnt), (bsum/cnt)), (cx_origin-200, cy_origin-10), cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (0, 0, 255), 2)   # 평균을 구한 일차함수
-
+                cv2.putText(img, "y = ({})x + {}".format((asum / cnt), (bsum / cnt)), (cx_origin-200, cy_origin-10), cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (0, 0, 255), 2)   # 평균을 구한 일차함수
                 save_function_list.append("y = ({})x + {}".format((asum / cnt), (bsum / cnt)))
+                save_degree_list.append(asum / cnt)
                 final_end_ptList.append([(0, int(bsum / (cnt))), ( int(cp_img.shape[1] - 1), int(((asum / (cnt)) * cp_img.shape[1] - 1) + (bsum / (cnt))))])
 
                 # 평균을 낸 값.  (오른쪽, 왼쪽)
                 cv2.line(img, (0, int(bsum / (cnt))), ( int(cp_img.shape[1] - 1), int(((asum / (cnt)) * cp_img.shape[1] - 1) + (bsum / (cnt)))) , (0, 255, 255), 1)
 
                 if flag == 1:
+
+                    if abs(save_degree_list[count - 1]) > chokeStandardAngle:
+                        chokeNG = chokeNG + 1
+                        color = (0, 0, 255)
+                    else:
+                        chokeOK = chokeOK + 1
+                        color = (0, 255, 255)
+
                     display_final(showimg, final_end_ptList[count-1][0][0], final_end_ptList[count-1][0][1], final_end_ptList[count-1][1][0], final_end_ptList[count-1][1][1], save_function_list[count-1])
                     flag = 0
 
                 cnt = cnt + 1
                 count = count + 1
+
+        if abs(save_degree_list[count - 1]) > chokeStandardAngle:
+            chokeNG = chokeNG + 1
+            color = (0, 0, 255)
+        else:
+            chokeOK = chokeOK + 1
+            color = (0, 255, 255)
+        chokeTotal = chokeNG + chokeOK
 
         display_final(showimg, final_end_ptList[count - 1][0][0], final_end_ptList[count - 1][0][1], final_end_ptList[count - 1][1][0], final_end_ptList[count - 1][1][1], save_function_list[count - 1])
 
@@ -810,7 +875,7 @@ def img_filtering(img):
 
 resolution = (1280, 960)
 def judgeImage(img):
-    global resolution
+    global resolution, dipoleStatusFlag
     NGcnt = 0
     OKcnt = 0
 
@@ -914,9 +979,11 @@ def judgeImage(img):
     NGcnt = 24 - OKcnt
     print('OKcnt, NGcnt:', OKcnt, NGcnt)
     if OKcnt == 24:
-        judge = 1
+        judge = 1       # OK 신호
+        dipoleStatusFlag = 1
     else:
-        judge = 2
+        judge = 2       # NG 신호
+        dipoleStatusFlag = 2
 
     return img, cal_img, judge, NGcnt
 
@@ -1121,8 +1188,6 @@ def decode(im):
         Serial_No = ''
         return Serial_No
 
-
-
 def checkSerialNumber(img):
     global resolution
     barcode_area = [(730, 350), (800, 600)]
@@ -1136,12 +1201,22 @@ def checkSerialNumber(img):
     # cv2.imshow('serialcheck', img)
     return roi
 
+chokeOKacum = 0
+chokeNGacum = 0
+def chokejudgement():
+    global chokeNG, chokeOK, chokeTotal
+    global chokeNGacum, chokeOKacum
+    if chokeTotal != 5:
+        chokeNGacum = chokeNGacum + 1
+    else:
+        chokeOKacum = chokeOKacum + 1
 
 readyflag = 0
 count = 0
 def checkStatusSignal(img):
     global readyflag, count, tact_time, tactFlag, sum_tact_time_list, sum_tact_time
     global cp_final, alreadyStartFlag
+    global color, chokeNG, chokeOK, chokeTotal
 
     count = count + 1
     if count > 5:
@@ -1174,21 +1249,22 @@ def checkStatusSignal(img):
                     tactFlag = 1
 
                     # check serial Number
-                    roi =checkSerialNumber(img)
+                    roi = checkSerialNumber(img)
                     Serial_No = decode(roi)
                     print("Serial:", Serial_No)
 
                     print("이곳에 판독 함수를 작성")
-                    dipoleResult, cal_img, judge, NGcnt = judgeImage(img)     # result를 GUI로 이용. 리턴: 다이폴이미지, 왜곡보정이미지, 판독값
+                    dipoleResult, cal_img, dipolejudge, NGcnt = judgeImage(img)     # result를 GUI로 이용. 리턴: 다이폴이미지, 왜곡보정이미지, 판독값
                     # choke_judgeImage(cal_img)
-                    # cv2.imshow('chokefinal', cp_final)
+                    # cv2.imshow('chokefinal', cp_final)                      # ** choke 세팅 다되면, temp 대신 cp_final를 return으로 대입해야함 !
                     temp = cv2.imread('temp.png')
+                    chokeTotal = 4                              # <= 임시로 판독 갯수를 집어 넣음. choke 완성되면 지워버리기, 전역변수이기 때문에
 
                     print("OK 인지 NG 인지 전송")
                     # sendSignal(judge)                   # send judgement to PLC
                     # light_off()
                     print("NGcnt:", NGcnt)
-                    timerCounter(judge, Serial_No, NGcnt)
+                    timerCounter(dipolejudge, Serial_No, NGcnt)
                     return [dipoleResult, temp]
     except:
         print("Test모드 실행중 - 조명시리얼, PLC시리얼을 연결해세요.")
@@ -1199,8 +1275,20 @@ def checkStatusSignal(img):
     의 형태로 함수 사용.
 '''
 def sendSignal(signal=0):
-    global tactFlag, sum_tact_time_list, sum_tact_time, storeTacttime, accumulation
-    accumulation = accumulation + 1
+    global tactFlag, sum_tact_time_list, sum_tact_time, storeTacttime, accumulation, dipoleStatusFlag
+    global dipoleOKaccum, dipoleNGaccum
+    accumulation = accumulation + 1     # 총 판독 갯수
+
+    if dipoleStatusFlag == 1:
+        dipoleOKaccum = dipoleOKaccum + 1
+    if dipoleStatusFlag == 2:
+        dipoleNGaccum = dipoleNGaccum + 1
+
+    chokejudgement()  # choke 의 NG갯수, OK갯수 판독하여 카운트함.
+    print("fuck", chokeNGacum, chokeOKacum)
+    print("fuck2", chokeTotal)
+
+
     signal = str(signal)
     signal = signal.encode()
     tactFlag = 0
@@ -1211,7 +1299,9 @@ def sendSignal(signal=0):
 
 # 결과를 GUI 라벨옆 Text Box에 출력
 def result_display(select, data='input data'):
-    global accumulation
+    global accumulation, dipoleOKaccum, dipoleNGaccum
+    global color, chokeNG, chokeOK, chokeTotal
+    global chokeNGacum, chokeOKacum
 
     if select == 0:
         RV_SN.delete(0, END)
@@ -1228,6 +1318,17 @@ def result_display(select, data='input data'):
     elif select == 4:
         RV_ACC.delete(0, END)
         RV_ACC.insert(20, str(accumulation))
+    elif select == 5:
+        DA_PASS.delete(0, END)
+        DA_NG.delete(0, END)
+        DA_PASS.insert(20, str(dipoleOKaccum))
+        DA_NG.insert(20, str(dipoleNGaccum))
+    elif select == 6:
+        RV_PASS.delete(0, END)
+        RV_NG.delete(0, END)
+        RV_PASS.insert(20, str(chokeOKacum))
+        RV_NG.insert(20, str(chokeNGacum))
+
 
 
 def Reformat_Image(image, ratio_w, ratio_h):
@@ -1332,6 +1433,7 @@ def main():
     global RV_SN, RV_TIME, RV_ACC, RV_PASS, RV_NG, RV_TACT, DA_PASS, DA_NG, DA_ACC
     global screen_width, screen_height, tk_width, tk_height
     global dipole_label, choke_label
+    global finalimg
 
     # initial turn off the light
     try:
