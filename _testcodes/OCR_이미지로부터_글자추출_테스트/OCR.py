@@ -4,6 +4,8 @@
     Have to download OCR program firstly.
     Link : https://github.com/UB-Mannheim/tesseract/wiki
 
+    제일 먼저 tesseract프로그램을 위 링크에서 다운로드 함
+
     environment    : Window 10, python 3.6
     tesseract ver  : v5.0.0.20190526.exe
 
@@ -16,10 +18,17 @@
     pip install opencv-python
 '''
 
-from PIL import Image
-import pytesseract
 import cv2
 import os
+try:
+    from PIL import Image
+except ImportError:
+    import Image
+import pytesseract
+
+# 설치한 tesseract 프로그램 경로 (64비트)
+pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract'
+# 32비트인 경우 => r'C:\Program Files (x86)\Tesseract-OCR\tesseract'
 
 # 이미지 불러오기, Gray 프로세싱
 image = cv2.imread("eng_digit.png")
